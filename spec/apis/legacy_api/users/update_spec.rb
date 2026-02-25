@@ -90,4 +90,17 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
     expect(json["status"]).to eq("error")
     expect(json["data"]["code"]).to eq("CannotModifySelf")
   end
+
+  it "prevents admin from removing own admin status with string false" do
+    patch "/api/v1/users/#{admin_user.uuid}",
+          params: { admin: "false" }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json["data"]["code"]).to eq("CannotModifySelf")
+
+    admin_user.reload
+    expect(admin_user.admin).to be(true)
+  end
 end
