@@ -30,6 +30,8 @@ module LegacyAPI
     skip_before_action :set_browser_id
     skip_before_action :verify_authenticity_token
 
+    rescue_from ActionDispatch::Http::Parameters::ParseError, with: :handle_json_parse_error
+
     before_action :start_timer
     before_action :authenticate_as_server
 
@@ -127,6 +129,10 @@ module LegacyAPI
                      time: (Time.now.to_f - @start_time).round(3),
                      flags: {},
                      data: { message: message } }
+    end
+
+    def handle_json_parse_error
+      render_parameter_error "Request body must contain valid JSON."
     end
 
   end
