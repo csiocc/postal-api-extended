@@ -24,16 +24,23 @@ module LegacyAPI
 
     def create
       params = api_params
-
-      user = User.new(
+      user_attributes = {
         email_address: params['email_address'],
         first_name: params['first_name'],
         last_name: params['last_name'],
         password: params['password'],
         password_confirmation: params['password_confirmation'],
-        admin: params['admin'] || false,
         time_zone: params['time_zone'] || 'UTC'
-      )
+      }
+
+      if params.key?('admin')
+        admin_value = normalize_boolean_param(params['admin'], 'admin')
+        return if admin_value == :invalid
+
+        user_attributes[:admin] = admin_value
+      end
+
+      user = User.new(user_attributes)
 
       if params['organization_ids'].present?
         organization_ids = authorized_organization_ids(params['organization_ids'])
@@ -57,8 +64,14 @@ module LegacyAPI
       return unless user
 
       params = api_params
+      admin_value = nil
 
-      if user.uuid == @current_admin_user.uuid && params['admin'] == false
+      if params.key?('admin')
+        admin_value = normalize_boolean_param(params['admin'], 'admin')
+        return if admin_value == :invalid
+      end
+
+      if user.uuid == @current_admin_user.uuid && admin_value == false
         render_error('CannotModifySelf',
                      message: 'Cannot remove your own admin status')
         return
@@ -68,7 +81,7 @@ module LegacyAPI
         email_address: params['email_address'],
         first_name: params['first_name'],
         last_name: params['last_name'],
-        admin: params['admin'],
+        admin: admin_value,
         time_zone: params['time_zone']
       }.compact
       user.assign_attributes(update_attributes)
@@ -176,6 +189,23 @@ module LegacyAPI
       end
 
       raw_organization_ids.map(&:to_i).uniq
+    end
+
+    def normalize_boolean_param(raw_value, field_name)
+      return true if raw_value == true
+      return false if raw_value == false
+
+      if raw_value.is_a?(String)
+        normalized = raw_value.strip.downcase
+        return true if %w[true 1].include?(normalized)
+        return false if %w[false 0].include?(normalized)
+      elsif raw_value.is_a?(Numeric)
+        return true if raw_value == 1
+        return false if raw_value == 0
+      end
+
+      render_parameter_error("#{field_name} must be a boolean")
+      :invalid
     end
 
     def global_admin?
