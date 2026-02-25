@@ -179,7 +179,7 @@ module LegacyAPI
     end
 
     def allow_cross_organization_user_management?
-      @current_credential&.options&.[](CROSS_ORG_USER_MANAGEMENT_OPTION) || false
+      @current_credential&.options&.[](CROSS_ORG_USER_MANAGEMENT_OPTION) == true
     end
 
     def user_hash(user, include_details: false)
