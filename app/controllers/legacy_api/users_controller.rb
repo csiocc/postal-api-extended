@@ -59,13 +59,14 @@ module LegacyAPI
         return
       end
 
-      user.assign_attributes(
+      update_attributes = {
         email_address: params['email_address'],
         first_name: params['first_name'],
         last_name: params['last_name'],
         admin: params['admin'],
         time_zone: params['time_zone']
-      ).compact
+      }.compact
+      user.assign_attributes(update_attributes)
       
       if params['password'].present?
         user.password = params['password']
