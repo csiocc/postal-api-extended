@@ -6,10 +6,10 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:cockpit_credential) do
+  let(:global_admin_credential) do
     create(:credential,
            server: server,
-           options: { "allow_cross_organization_user_management" => true })
+           options: { "global_admin" => true })
   end
 
   let(:admin_user) { create(:user, admin: true) }
@@ -54,17 +54,17 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
     expect(json["data"]["code"]).to eq("UserNotFound")
   end
 
-  it "allows cross-organization updates for cockpit-scoped credentials" do
+  it "allows cross-organization updates for global-admin credentials" do
     patch "/api/v1/users/#{foreign_user.uuid}",
-          params: { first_name: "CockpitUpdated" }.to_json,
-          headers: json_headers_for(cockpit_credential.key)
+          params: { first_name: "GlobalAdminUpdated" }.to_json,
+          headers: json_headers_for(global_admin_credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
-    expect(json.dig("data", "user", "first_name")).to eq("CockpitUpdated")
+    expect(json.dig("data", "user", "first_name")).to eq("GlobalAdminUpdated")
 
     foreign_user.reload
-    expect(foreign_user.first_name).to eq("CockpitUpdated")
+    expect(foreign_user.first_name).to eq("GlobalAdminUpdated")
   end
 
   it "prevents assigning out-of-scope organizations for regular credentials" do

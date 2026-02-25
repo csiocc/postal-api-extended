@@ -6,10 +6,10 @@ RSpec.describe "LegacyAPI::Users#index", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:cockpit_credential) do
+  let(:global_admin_credential) do
     create(:credential,
            server: server,
-           options: { "allow_cross_organization_user_management" => true })
+           options: { "global_admin" => true })
   end
 
   let(:admin_user) { create(:user, admin: true) }
@@ -36,8 +36,8 @@ RSpec.describe "LegacyAPI::Users#index", type: :request do
     expect(json["data"]["total"]).to eq(uuids.size)
   end
 
-  it "allows cross-organization listing for cockpit-scoped credentials" do
-    get "/api/v1/users", headers: { "X-Server-API-Key" => cockpit_credential.key }
+  it "allows cross-organization listing for global-admin credentials" do
+    get "/api/v1/users", headers: { "X-Server-API-Key" => global_admin_credential.key }
 
     json = JSON.parse(response.body)
     uuids = json["data"]["users"].map { |user| user["uuid"] }

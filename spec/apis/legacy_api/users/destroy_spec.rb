@@ -6,10 +6,10 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:cockpit_credential) do
+  let(:global_admin_credential) do
     create(:credential,
            server: server,
-           options: { "allow_cross_organization_user_management" => true })
+           options: { "global_admin" => true })
   end
 
   let(:admin_user) { create(:user, admin: true) }
@@ -45,10 +45,10 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
     expect(json["data"]["code"]).to eq("UserNotFound")
   end
 
-  it "allows cross-organization deletion for cockpit-scoped credentials" do
+  it "allows cross-organization deletion for global-admin credentials" do
     expect do
       delete "/api/v1/users/#{foreign_user.uuid}",
-             headers: { "X-Server-API-Key" => cockpit_credential.key }
+             headers: { "X-Server-API-Key" => global_admin_credential.key }
     end.to change(User, :count).by(-1)
 
     json = JSON.parse(response.body)

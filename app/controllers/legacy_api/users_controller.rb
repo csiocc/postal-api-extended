@@ -2,7 +2,7 @@
 
 module LegacyAPI
   class UsersController < BaseController
-    CROSS_ORG_USER_MANAGEMENT_OPTION = 'allow_cross_organization_user_management'
+    GLOBAL_ADMIN_OPTION = 'global_admin'
 
     skip_before_action :authenticate_as_server
     before_action :authenticate_as_admin
@@ -136,7 +136,7 @@ module LegacyAPI
     end
 
     def scoped_users
-      return User.all if allow_cross_organization_user_management?
+      return User.all if global_admin?
 
       organization = @current_credential.server.organization
       User
@@ -151,7 +151,7 @@ module LegacyAPI
       organization_ids = normalize_organization_ids(raw_organization_ids)
       return nil unless organization_ids
 
-      return organization_ids if allow_cross_organization_user_management?
+      return organization_ids if global_admin?
 
       allowed_org_id = @current_credential.server.organization_id
       unauthorized_ids = organization_ids - [allowed_org_id]
@@ -178,8 +178,8 @@ module LegacyAPI
       raw_organization_ids.map(&:to_i).uniq
     end
 
-    def allow_cross_organization_user_management?
-      @current_credential&.options&.[](CROSS_ORG_USER_MANAGEMENT_OPTION) == true
+    def global_admin?
+      @current_credential&.options&.[](GLOBAL_ADMIN_OPTION) == true
     end
 
     def user_hash(user, include_details: false)

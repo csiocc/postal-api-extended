@@ -6,10 +6,10 @@ RSpec.describe "LegacyAPI::Users#create", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:cockpit_credential) do
+  let(:global_admin_credential) do
     create(:credential,
            server: server,
-           options: { "allow_cross_organization_user_management" => true })
+           options: { "global_admin" => true })
   end
 
   let(:admin_user) { create(:user, admin: true) }
@@ -66,15 +66,15 @@ RSpec.describe "LegacyAPI::Users#create", type: :request do
     expect(json["data"]["code"]).to eq("AccessDenied")
   end
 
-  it "allows cross-organization assignment for cockpit-scoped credentials" do
+  it "allows cross-organization assignment for global-admin credentials" do
     cross_org_params = valid_params.merge(
-      email_address: "cockpit-user@test.com",
+      email_address: "global-admin-user@test.com",
       organization_ids: [organization.id, other_organization.id]
     )
 
     post "/api/v1/users",
          params: cross_org_params.to_json,
-         headers: json_headers_for(cockpit_credential.key)
+         headers: json_headers_for(global_admin_credential.key)
 
     json = JSON.parse(response.body)
     created_user = User.find_by!(uuid: json.dig("data", "user", "uuid"))
@@ -103,5 +103,16 @@ RSpec.describe "LegacyAPI::Users#create", type: :request do
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")
+  end
+
+  it "returns parameter-error for malformed JSON payloads" do
+    post "/api/v1/users",
+         params: '{"email_address":"broken-json"',
+         headers: json_headers_for(credential.key)
+
+    expect(response).to have_http_status(200)
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("Request body must contain valid JSON.")
   end
 end
