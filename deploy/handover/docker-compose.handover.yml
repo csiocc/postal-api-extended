@@ -1,0 +1,91 @@
+services:
+  mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MARIADB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postal-web:
+    image: ${POSTAL_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    command: ["postal", "web-server"]
+    ports:
+      - "${WEB_PORT}:5000"
+    volumes:
+      - ./config:/config:ro
+    environment:
+      POSTAL_CONFIG_FILE_PATH: /config/postal.yml
+      POSTAL_SIGNING_KEY_PATH: /config/signing.key
+      MAIN_DB_HOST: mariadb
+      MAIN_DB_USERNAME: ${MAIN_DB_USERNAME}
+      MAIN_DB_PASSWORD: ${MAIN_DB_PASSWORD}
+      MESSAGE_DB_HOST: mariadb
+      MESSAGE_DB_USERNAME: ${MESSAGE_DB_USERNAME}
+      MESSAGE_DB_PASSWORD: ${MESSAGE_DB_PASSWORD}
+      RAILS_ENVIRONMENT: ${RAILS_ENVIRONMENT}
+      WAIT_FOR_TIMEOUT: 120
+      WAIT_FOR_TARGETS: mariadb:3306
+      BIND_ADDRESS: 0.0.0.0
+      POSTAL_WEB_HOSTNAME: ${POSTAL_WEB_HOSTNAME}
+      POSTAL_WEB_PROTOCOL: ${POSTAL_WEB_PROTOCOL}
+      POSTAL_SMTP_HOSTNAME: ${POSTAL_SMTP_HOSTNAME}
+
+  postal-worker:
+    image: ${POSTAL_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    command: ["postal", "worker"]
+    volumes:
+      - ./config:/config:ro
+    environment:
+      POSTAL_CONFIG_FILE_PATH: /config/postal.yml
+      POSTAL_SIGNING_KEY_PATH: /config/signing.key
+      MAIN_DB_HOST: mariadb
+      MAIN_DB_USERNAME: ${MAIN_DB_USERNAME}
+      MAIN_DB_PASSWORD: ${MAIN_DB_PASSWORD}
+      MESSAGE_DB_HOST: mariadb
+      MESSAGE_DB_USERNAME: ${MESSAGE_DB_USERNAME}
+      MESSAGE_DB_PASSWORD: ${MESSAGE_DB_PASSWORD}
+      RAILS_ENVIRONMENT: ${RAILS_ENVIRONMENT}
+      WAIT_FOR_TIMEOUT: 120
+      WAIT_FOR_TARGETS: mariadb:3306
+
+  postal-smtp:
+    image: ${POSTAL_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    command: ["postal", "smtp-server"]
+    ports:
+      - "${SMTP_PORT}:25"
+    volumes:
+      - ./config:/config:ro
+    environment:
+      POSTAL_CONFIG_FILE_PATH: /config/postal.yml
+      POSTAL_SIGNING_KEY_PATH: /config/signing.key
+      MAIN_DB_HOST: mariadb
+      MAIN_DB_USERNAME: ${MAIN_DB_USERNAME}
+      MAIN_DB_PASSWORD: ${MAIN_DB_PASSWORD}
+      MESSAGE_DB_HOST: mariadb
+      MESSAGE_DB_USERNAME: ${MESSAGE_DB_USERNAME}
+      MESSAGE_DB_PASSWORD: ${MESSAGE_DB_PASSWORD}
+      RAILS_ENVIRONMENT: ${RAILS_ENVIRONMENT}
+      WAIT_FOR_TIMEOUT: 120
+      WAIT_FOR_TARGETS: mariadb:3306
+
+volumes:
+  mariadb_data:

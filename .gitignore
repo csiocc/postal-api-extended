@@ -33,4 +33,6 @@ BRANCH
 
 .rubocop-https*
 .env*
+docker/ci-config/postal.yml
 
+deploy/handover/README.local.md
