@@ -8,6 +8,9 @@ module LegacyAPI
     before_action :authenticate_as_global_admin
 
     def index
+      organizations = Organization.present.order(:name).includes(:owner) # only Orgs with deleted_at: nil
+      
+      render_success( organizations: organizations.map { |organization| organization_hash(organization) }, total: organizations.count)
     end
 
     def show
