@@ -21,6 +21,25 @@ module LegacyAPI
     end
 
     def create
+      params = api_params
+      owner = resolve_owner(params)
+      return unless owner
+
+      organization = Organization.new(
+        name: params["name"],
+        permalink: params["permalink"],
+        time_zone: params["time_zone"] || "UTC",
+        owner: owner
+      )
+
+      if organization.save
+        render_success(
+          organization: organization_hash(organization, include_details: true),
+          message: "Organization #{organization.name} created successfully"
+        )
+      else
+        render_parameter_error(organization.errors.full_messages.join(", "))
+      end
     end
 
     def update
@@ -75,6 +94,19 @@ module LegacyAPI
         }
       end
       org
+    end
+
+    def resolve_owner(params)
+      owner_uuid = params["owner_uuid"].to_s.strip
+      return @current_admin_user if owner_uuid.empty?
+
+      owner = User.find_by(uuid: owner_uuid)
+      unless owner
+        render_error("UserNotFound", message: "The specified owner could not be found", owner_uuid: owner_uuid)
+        return nil
+      end
+
+      owner
     end
 
   end
