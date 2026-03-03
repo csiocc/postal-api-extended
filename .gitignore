@@ -36,3 +36,12 @@ BRANCH
 docker/ci-config/postal.yml
 
 deploy/handover/README.local.md
+
+# Local untracked files (temporary/docs for current work)
+deploy/handover/postal-api-extended-image.tar.gz
+deploy/handover/postal-api-extended-image.tar.gz.sha256
+doc/api/postal_connect_login_postman_guide.md
+doc/api/postman_users_api_collection.json
+doc/api/security_pentest_protocol.md
+doc/api/users_api_test_protocol.md
+doc/readme.md
