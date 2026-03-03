@@ -35,4 +35,26 @@ if Rails.env.test?
   membership = OrganizationUser.find_or_initialize_by(organization: organization, user: admin_user)
   membership.assign_attributes(admin: true, all_servers: true)
   membership.save!
+
+  server = organization.servers.find_or_initialize_by(permalink: "test-server")
+  server.assign_attributes(name: "Test Server", mode: "Live")
+  server.save!
+
+  server.message_db.provisioner.provision
+
+  scoped_credential = Credential.find_or_initialize_by(
+    server: server,
+    type: "API",
+    name: "Seed API (Scoped)"
+  )
+  scoped_credential.options ||= {}
+  scoped_credential.save!
+
+  global_admin_credential = Credential.find_or_initialize_by(
+    server: server,
+    type: "API",
+    name: "Seed API (Global Admin)"
+  )
+  global_admin_credential.options = (global_admin_credential.options || {}).merge("global_admin" => true)
+  global_admin_credential.save!
 end
