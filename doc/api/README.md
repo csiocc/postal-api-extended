@@ -5,8 +5,8 @@ Complete API reference for Postal mail server.
 ## Available APIs
 
 ### User Management
-- [User Management API](./users.md) - Create, read, update, and delete users
-- [Organization Management API](./organizations.md) - Create, read, update, and delete organizations
+- [User Management API](./users.md) - CRUD users
+- [Organization Management API](./organizations.md) - CRUD organizations
 
 ### Legacy API (v1)
 - Send Messages
