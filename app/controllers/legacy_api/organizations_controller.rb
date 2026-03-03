@@ -65,6 +65,12 @@ module LegacyAPI
     end
 
     def destroy
+      organization = find_organization
+      return unless organization
+
+      name = organization.name
+      organization.soft_destroy
+      render_success(message: "Organization #{name} has been deleted")
     end
 
     private
