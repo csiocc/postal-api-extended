@@ -8,6 +8,9 @@ if Rails.env.test?
   admin_last_name = "Admin"
   organization_name = "Test Org"
   organization_permalink = "test"
+  server_name = "Seeded Global Admin Server"
+  server_permalink = "seeded-global-admin-server"
+  credential_name = "Seeded Global Admin API"
 
   admin_user = User.find_or_initialize_by(email_address: admin_email)
   admin_user.assign_attributes(
@@ -35,4 +38,15 @@ if Rails.env.test?
   membership = OrganizationUser.find_or_initialize_by(organization: organization, user: admin_user)
   membership.assign_attributes(admin: true, all_servers: true)
   membership.save!
+
+  server = Server.find_or_initialize_by(organization: organization, permalink: server_permalink)
+  server.assign_attributes(
+    name: server_name,
+    mode: "Development"
+  )
+  server.save!
+
+  credential = Credential.find_or_initialize_by(server: server, type: "API", name: credential_name)
+  credential.options = (credential.options || {}).merge("global_admin" => true)
+  credential.save!
 end
