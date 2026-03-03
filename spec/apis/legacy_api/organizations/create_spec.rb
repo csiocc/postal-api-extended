@@ -13,6 +13,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
   end
 
   let(:admin_user) { create(:user, admin: true) }
+  let(:other_owner) { create(:user, admin: false) }
 
   before do
     organization.update!(owner: admin_user)
@@ -59,7 +60,8 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
   it 'allows organization creation for global-admin credentials' do
     global_admin_params = valid_params.merge(
       name: 'global admin org',
-      permalink: 'global-admin-org'
+      permalink: 'global-admin-org',
+      owner_uuid: other_owner.uuid
     )
 
     expect do
@@ -71,6 +73,27 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     json = JSON.parse(response.body)
     expect(json['status']).to eq('success')
     expect(json.dig('data', 'organization', 'permalink')).to eq('global-admin-org')
+
+    created_organization = Organization.find_by!(uuid: json.dig('data', 'organization', 'uuid'))
+    expect(created_organization.owner_id).to eq(other_owner.id)
+  end
+
+  it 'returns UserNotFound when owner_uuid does not exist' do
+    invalid_owner_params = valid_params.merge(
+      name: 'invalid owner org',
+      permalink: 'invalid-owner-org',
+      owner_uuid: '00000000-0000-0000-0000-000000000000'
+    )
+
+    expect do
+      post '/api/v1/organizations',
+           params: invalid_owner_params.to_json,
+           headers: json_headers_for(global_admin_credential.key)
+    end.not_to change(Organization, :count)
+
+    json = JSON.parse(response.body)
+    expect(json['status']).to eq('error')
+    expect(json.dig('data', 'code')).to eq('UserNotFound')
   end
 
 end
