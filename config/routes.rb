@@ -14,6 +14,13 @@ Rails.application.routes.draw do
   match "/api/v1/users/:uuid" => "legacy_api/users#update", via: [:patch, :put]
   match "/api/v1/users/:uuid" => "legacy_api/users#destroy", via: [:delete]
 
+  # Server Management API Routes
+  match "/api/v1/servers" => "legacy_api/servers#index", via: [:get]
+  match "/api/v1/servers" => "legacy_api/servers#create", via: [:post]
+  match "/api/v1/servers/:uuid" => "legacy_api/servers#show", via: [:get]
+  match "/api/v1/servers/:uuid" => "legacy_api/servers#update", via: [:patch, :put]
+  match "/api/v1/servers/:uuid" => "legacy_api/servers#destroy", via: [:delete]
+
   scope "org/:org_permalink", as: "organization" do
     resources :domains, only: [:index, :new, :create, :destroy] do
       match :verify, on: :member, via: [:get, :post]
