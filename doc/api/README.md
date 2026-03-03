@@ -7,6 +7,7 @@ Complete API reference for Postal mail server.
 ### User Management
 - [User Management API](./users.md) - Create, read, update, and delete users
 - [Server Management API](./servers.md) - Create, read, update, and delete servers
+- [Credential Management API](./credentials.md) - Create, read, update, and delete credentials
 - [Organization Management API](./organizations.md) - Create, read, update, and delete organizations
 
 ### Legacy API (v1)
@@ -67,6 +68,11 @@ All API responses follow this structure:
 | Servers         | `GET /api/v1/servers/:uuid`| Get server details         |
 | Servers         | `PATCH /api/v1/servers/:uuid`| Update server            |
 | Servers         | `DELETE /api/v1/servers/:uuid`| Delete server           |
+| Credentials     | `GET /api/v1/credentials`      | List visible credentials  |
+| Credentials     | `POST /api/v1/credentials`     | Create new credential     |
+| Credentials     | `GET /api/v1/credentials/:uuid`| Get credential details    |
+| Credentials     | `PATCH /api/v1/credentials/:uuid`| Update credential      |
+| Credentials     | `DELETE /api/v1/credentials/:uuid`| Delete credential     |
 | Organizations   | `GET /api/v1/organizations`        | List organizations         |
 | Organizations   | `POST /api/v1/organizations`       | Create organization        |
 | Organizations   | `GET /api/v1/organizations/:uuid`  | Get organization details   |
