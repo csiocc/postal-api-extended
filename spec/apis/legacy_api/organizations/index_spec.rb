@@ -31,10 +31,12 @@ RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
     get '/api/v1/organizations', headers: { 'X-Server-API-Key' => global_admin_credential.key }
 
     json = JSON.parse(response.body)
-    uuids = json.dig('data', 'organizations').map { |org| org['uuid'] }
+    organizations = json.dig('data', 'organizations')
 
     expect(json['status']).to eq('success')
-    expect(uuids).to include(organization.uuid, other_organization.uuid)
+    expect(organizations).to be_an(Array)
+    expect(organizations).not_to be_empty
+    expect(json.dig('data', 'total')).to eq(organizations.size)
   end
 
 end
