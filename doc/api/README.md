@@ -6,6 +6,7 @@ Complete API reference for Postal mail server.
 
 ### User Management
 - [User Management API](./users.md) - Create, read, update, and delete users
+- [Server Management API](./servers.md) - Create, read, update, and delete servers
 
 ### Legacy API (v1)
 - Send Messages
@@ -60,6 +61,11 @@ All API responses follow this structure:
 | Users           | `GET /api/v1/users/:uuid`  | Get user details           |
 | Users           | `PATCH /api/v1/users/:uuid`| Update user                |
 | Users           | `DELETE /api/v1/users/:uuid`| Delete user               |
+| Servers         | `GET /api/v1/servers`      | List visible servers       |
+| Servers         | `POST /api/v1/servers`     | Create new server          |
+| Servers         | `GET /api/v1/servers/:uuid`| Get server details         |
+| Servers         | `PATCH /api/v1/servers/:uuid`| Update server            |
+| Servers         | `DELETE /api/v1/servers/:uuid`| Delete server           |
 | Messages        | `POST /api/v1/send/message`| Send email message         |
 | Messages        | `POST /api/v1/send/raw`    | Send raw email             |
 
