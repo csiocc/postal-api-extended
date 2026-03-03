@@ -43,6 +43,25 @@ module LegacyAPI
     end
 
     def update
+      organization = find_organization
+      return unless organization
+
+      params = api_params
+      update_attributes = {
+        name: params["name"],
+        permalink: params["permalink"],
+        time_zone: params["time_zone"]
+      }.compact
+      organization.assign_attributes(update_attributes)
+
+      if organization.save
+        render_success(
+          organization: organization_hash(organization, include_details: true),
+          message: "Organization #{organization.name} updated successfully"
+        )
+      else
+        render_parameter_error(organization.errors.full_messages.join(", "))
+      end
     end
 
     def destroy
