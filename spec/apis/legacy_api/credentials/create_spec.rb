@@ -78,6 +78,20 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     expect(created_credential.server_id).to eq(other_server.id)
   end
 
+  it "defaults type to SMTP when no type is provided" do
+    params_without_type = { name: "Default SMTP Credential" }
+
+    post "/api/v1/credentials",
+         params: params_without_type.to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+
+    created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
+    expect(created_credential.type).to eq("SMTP")
+  end
+
   it "returns parameter-error for invalid type" do
     invalid_params = valid_params.merge(type: "BROKEN")
 
@@ -100,4 +114,3 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     expect(json.dig("data", "message")).to eq("Request body must contain valid JSON.")
   end
 end
-
