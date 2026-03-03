@@ -14,6 +14,10 @@ module LegacyAPI
     end
 
     def show
+      organization = find_organization
+      return unless organization
+
+      render_success(organization: organization_hash(organization, include_details: true))
     end
 
     def create
@@ -41,6 +45,36 @@ module LegacyAPI
 
     def global_admin?
       @current_credential&.options&.[](GLOBAL_ADMIN_OPTION) == true
+    end
+
+    def find_organization
+      organization = Organization.present.find_by(uuid: params[:uuid])
+      unless organization
+        render_error("OrganizationNotFound", message: "The requested organization could not be found", uuid: params[:uuid])
+        return nil
+      end
+      organization
+    end
+
+    def organization_hash(organization, include_details: false)
+      org = {
+        uuid: organization.uuid,
+        name: organization.name,
+        permalink: organization.permalink,
+        time_zone: organization.time_zone,
+        status: organization.status,
+        created_at: organization.created_at.iso8601,
+        updated_at: organization.updated_at.iso8601
+      }
+
+      if include_details
+        org[:owner] = {
+          uuid: organization.owner.uuid,
+          email_address: organization.owner.email_address,
+          name: organization.owner.name
+        }
+      end
+      org
     end
 
   end
