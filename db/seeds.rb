@@ -42,19 +42,35 @@ if Rails.env.test?
 
   server.message_db.provisioner.provision
 
-  scoped_credential = Credential.find_or_initialize_by(
+  admin_credential = Credential.find_or_initialize_by(
     server: server,
     type: "API",
-    name: "Seed API (Scoped)"
+    name: "Seed API (Admin Actor)"
   )
-  scoped_credential.options ||= {}
-  scoped_credential.save!
+  admin_credential.options = (admin_credential.options || {}).except("global_admin")
+  admin_credential.save!
 
-  global_admin_credential = Credential.find_or_initialize_by(
-    server: server,
-    type: "API",
-    name: "Seed API (Global Admin)"
+  regular_email = "user@postal.local"
+  regular_password = "secretpassword"
+  regular_first_name = "seededRegular"
+  regular_last_name = "User"
+
+  regular_user = User.find_or_initialize_by(email_address: regular_email)
+  regular_user.assign_attributes(
+    first_name: regular_first_name,
+    last_name: regular_last_name,
+    admin: false,
+    time_zone: "UTC"
   )
-  global_admin_credential.options = (global_admin_credential.options || {}).merge("global_admin" => true)
-  global_admin_credential.save!
+
+  if regular_user.new_record? || !regular_user.password?
+    regular_user.password = regular_password
+    regular_user.password_confirmation = regular_password
+  end
+
+  regular_user.save!
+
+  regular_membership = OrganizationUser.find_or_initialize_by(organization: organization, user: regular_user)
+  regular_membership.assign_attributes(admin: false, all_servers: true)
+  regular_membership.save!
 end

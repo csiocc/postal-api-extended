@@ -19,12 +19,13 @@ Every request needs a server API key in the header:
 X-Server-API-Key: <api_key>
 ```
 
-Credential management requires that the owner of the credential's organization has `admin=true`.
+The API actor is the owner of the credential's server organization.
 
 Scope rules:
-- regular credentials can manage credentials only in their own organization
-- credentials with `options["global_admin"] == true` can manage credentials across organizations
-- string values like `"false"` do not enable global admin scope
+- admin actor (`admin=true`): all organizations
+- non-admin actor: organizations they own or are assigned to
+
+There is no `global_admin` credential flag anymore.
 
 ## Response Format
 
@@ -43,7 +44,7 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth, non-admin owner, or out-of-scope write target |
+| `AccessDenied` | Missing auth or out-of-scope write target |
 | `InvalidServerAPIKey` | API key does not exist |
 | `ServerSuspended` | Credential belongs to a suspended server |
 | `CredentialNotFound` | UUID is missing or outside current visibility scope |
@@ -59,8 +60,8 @@ Returns credentials visible in the current scope (`Credential` entries attached 
 
 Optional query params:
 - `server_id` (integer): limits results to credentials of that server
-  - global-admin credentials can filter by any visible server
-  - scoped credentials can filter only servers in their own organization
+  - admin actor can filter by any visible server
+  - scoped actor can filter only visible servers in their scope
   - out-of-scope `server_id` returns `AccessDenied`
   - unknown `server_id` returns `ServerNotFound`
   - non-integer `server_id` returns `parameter-error`
@@ -105,7 +106,7 @@ Creates a credential.
 | `name` | string | yes | |
 | `key` | string | no | generated automatically for non-`SMTP-IP` credentials |
 | `hold` | boolean | no | accepts `true/false`, `1/0`, `"true"/"false"` |
-| `server_id` | integer | no | defaults to current credential server; cross-org only for global admin |
+| `server_id` | integer | no | defaults to current credential server |
 
 Validation and scope behavior:
 - unknown or out-of-scope `server_id` returns `ServerNotFound` or `AccessDenied`

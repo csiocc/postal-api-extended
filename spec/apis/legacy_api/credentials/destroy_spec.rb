@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
-  let!(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let!(:target_credential) { create(:credential, server: server) }
@@ -22,9 +17,9 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "deletes credentials inside the credential scope" do
+  it "deletes credentials across organizations for admin credentials" do
     expect do
-      delete "/api/v1/credentials/#{target_credential.uuid}",
+      delete "/api/v1/credentials/#{foreign_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.to change(Credential, :count).by(-1)
 
@@ -33,7 +28,9 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     expect(json["status"]).to eq("success")
   end
 
-  it "blocks cross-organization deletion for regular scoped credentials" do
+  it "blocks cross-organization deletion for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     expect do
       delete "/api/v1/credentials/#{foreign_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
@@ -44,10 +41,12 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     expect(json.dig("data", "code")).to eq("CredentialNotFound")
   end
 
-  it "allows cross-organization deletion for global-admin credentials" do
+  it "allows scoped deletion for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     expect do
-      delete "/api/v1/credentials/#{foreign_credential.uuid}",
-             headers: { "X-Server-API-Key" => global_admin_credential.key }
+      delete "/api/v1/credentials/#{target_credential.uuid}",
+             headers: { "X-Server-API-Key" => credential.key }
     end.to change(Credential, :count).by(-1)
 
     json = JSON.parse(response.body)

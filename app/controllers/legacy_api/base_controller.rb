@@ -135,5 +135,32 @@ module LegacyAPI
       render_parameter_error "Request body must contain valid JSON."
     end
 
+    # Return the API actor user inferred from the credential context.
+    #
+    # @return [User, nil]
+    def current_api_user
+      @current_api_user ||= @current_credential&.server&.organization&.owner
+    end
+
+    # Return organizations visible to the current API actor.
+    #
+    # Admin users can see all organizations. Non-admin users can see
+    # organizations they own or are assigned to via organization_users.
+    #
+    # @return [ActiveRecord::Relation<Organization>]
+    def scoped_organizations_for_current_api_user
+      return Organization.present.none unless current_api_user
+      return Organization.present if current_api_user.admin?
+
+      Organization
+        .present
+        .left_outer_joins(:organization_users)
+        .where(
+          "organizations.owner_id = :user_id OR (organization_users.user_type = 'User' AND organization_users.user_id = :user_id)",
+          user_id: current_api_user.id
+        )
+        .distinct
+    end
+
   end
 end

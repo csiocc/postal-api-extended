@@ -2,13 +2,12 @@
 
 module LegacyAPI
   class OrganizationsController < BaseController
-    GLOBAL_ADMIN_OPTION = "global_admin"
-
     skip_before_action :authenticate_as_server
-    before_action :authenticate_as_global_admin
+    before_action :authenticate_as_user
+    before_action :admin_required_for_organization_write, only: [:create, :destroy]
 
     def index
-      organizations = Organization.present.order(:name).includes(:owner) # only Orgs with deleted_at: nil
+      organizations = scoped_organizations.order(:name).includes(:owner) # only Orgs with deleted_at: nil
       
       render_success( organizations: organizations.map { |organization| organization_hash(organization) }, total: organizations.count)
     end
@@ -75,24 +74,23 @@ module LegacyAPI
 
     private
 
-    def authenticate_as_global_admin
+    def authenticate_as_user
       authenticate_as_server
       return if performed?
 
-      unless global_admin?
-        render_error("AccessDenied", message: "Organization management requires global admin privileges")
-        return
-      end
+      return if current_api_user
 
-      @current_admin_user = @current_credential&.server&.organization&.owner
+      render_error("AccessDenied", message: "Organization management requires a valid user context")
     end
 
-    def global_admin?
-      @current_credential&.options&.[](GLOBAL_ADMIN_OPTION) == true
+    def admin_required_for_organization_write
+      return if current_api_user&.admin?
+
+      render_error("AccessDenied", message: "Organization write operations require admin privileges")
     end
 
     def find_organization
-      organization = Organization.present.find_by(uuid: params[:uuid])
+      organization = scoped_organizations.find_by(uuid: params[:uuid])
       unless organization
         render_error("OrganizationNotFound", message: "The requested organization could not be found", uuid: params[:uuid])
         return nil
@@ -123,7 +121,7 @@ module LegacyAPI
 
     def resolve_owner(params)
       owner_uuid = params["owner_uuid"].to_s.strip
-      return @current_admin_user if owner_uuid.empty?
+      return current_api_user if owner_uuid.empty?
 
       owner = User.find_by(uuid: owner_uuid)
       unless owner
@@ -132,6 +130,10 @@ module LegacyAPI
       end
 
       owner
+    end
+
+    def scoped_organizations
+      scoped_organizations_for_current_api_user
     end
 
   end

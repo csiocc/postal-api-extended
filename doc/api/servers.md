@@ -19,11 +19,13 @@ Every request needs a server API key in the header:
 X-Server-API-Key: <api_key>
 ```
 
-Server management requires that the owner of the credential's organization has `admin=true`.
+The API actor is the owner of the credential's server organization.
 
 Scope rules:
-- regular credentials can manage servers only in their own organization
-- credentials with `options["global_admin"] == true` can manage servers across organizations
+- admin actor (`admin=true`): all organizations
+- non-admin actor: organizations they own or are assigned to
+
+There is no `global_admin` credential flag anymore.
 
 ## Response Format
 
@@ -42,7 +44,7 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth, non-admin owner, or out-of-scope target organization |
+| `AccessDenied` | Missing auth or out-of-scope target organization |
 | `InvalidServerAPIKey` | API key does not exist |
 | `ServerSuspended` | Credential belongs to a suspended server |
 | `ServerNotFound` | UUID is missing or outside current visibility scope |
@@ -86,7 +88,7 @@ Creates a server.
 | `name` | string | yes | unique within organization |
 | `permalink` | string | no | defaults from name if omitted |
 | `mode` | string | yes | `Live` or `Development` |
-| `organization_id` | integer | no | defaults to credential organization; cross-org only for global admin |
+| `organization_id` | integer | no | defaults to credential organization |
 
 Validation or malformed input returns `parameter-error`.
 
@@ -110,4 +112,3 @@ Unknown UUID/out-of-scope => `ServerNotFound`.
 Soft-deletes a server.
 
 Unknown UUID/out-of-scope => `ServerNotFound`.
-

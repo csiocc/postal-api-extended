@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   let(:organization) { create(:organization) }
   let!(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:other_organization) { create(:organization) }
@@ -35,23 +30,29 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     }
   end
 
-  it "creates a server in credential organization scope" do
+  it "creates a server in another organization for admin credentials" do
     expect do
       post "/api/v1/servers",
-           params: valid_params.to_json,
+           params: valid_params.merge(
+             name: "Cross Org Server",
+             permalink: "cross-org-server",
+             organization_id: other_organization.id
+           ).to_json,
            headers: json_headers_for(credential.key)
     end.to change(Server, :count).by(1)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "permalink")).to eq("api-server")
+    expect(json.dig("data", "server", "permalink")).to eq("cross-org-server")
 
     created_server = Server.find_by!(uuid: json.dig("data", "server", "uuid"))
-    expect(created_server.organization_id).to eq(organization.id)
+    expect(created_server.organization_id).to eq(other_organization.id)
   end
 
-  it "denies creating a server outside credential scope" do
+  it "denies creating a server outside scope for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     out_of_scope_params = valid_params.merge(
       name: "Other Org Server",
       permalink: "other-org-server",
@@ -69,22 +70,17 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
-  it "allows cross-organization creation for global-admin credentials" do
-    cross_org_params = valid_params.merge(
-      name: "Global Admin Server",
-      permalink: "global-admin-server",
-      organization_id: other_organization.id
-    )
-
+  it "allows creating a server in the current organization for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
     post "/api/v1/servers",
-         params: cross_org_params.to_json,
-         headers: json_headers_for(global_admin_credential.key)
+         params: valid_params.to_json,
+         headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
 
     created_server = Server.find_by!(uuid: json.dig("data", "server", "uuid"))
-    expect(created_server.organization_id).to eq(other_organization.id)
+    expect(created_server.organization_id).to eq(organization.id)
   end
 
   it "returns parameter-error for invalid mode" do

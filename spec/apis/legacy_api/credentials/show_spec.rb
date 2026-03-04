@@ -6,16 +6,6 @@ RSpec.describe "LegacyAPI::Credentials#show", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
-  let(:string_false_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => "false" })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:target_credential) { create(:credential, server: server) }
@@ -38,7 +28,18 @@ RSpec.describe "LegacyAPI::Credentials#show", type: :request do
     expect(json.dig("data", "credential", "uuid")).to eq(target_credential.uuid)
   end
 
-  it "does not disclose credentials outside the credential scope" do
+  it "allows cross-organization credential reads for admin credentials" do
+    get "/api/v1/credentials/#{foreign_credential.uuid}",
+        headers: { "X-Server-API-Key" => credential.key }
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "credential", "uuid")).to eq(foreign_credential.uuid)
+  end
+
+  it "does not disclose foreign credentials for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     get "/api/v1/credentials/#{foreign_credential.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -46,23 +47,4 @@ RSpec.describe "LegacyAPI::Credentials#show", type: :request do
     expect(json["status"]).to eq("error")
     expect(json.dig("data", "code")).to eq("CredentialNotFound")
   end
-
-  it "allows cross-organization credential reads for global-admin credentials" do
-    get "/api/v1/credentials/#{foreign_credential.uuid}",
-        headers: { "X-Server-API-Key" => global_admin_credential.key }
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "credential", "uuid")).to eq(foreign_credential.uuid)
-  end
-
-  it "does not treat string false as global access" do
-    get "/api/v1/credentials/#{foreign_credential.uuid}",
-        headers: { "X-Server-API-Key" => string_false_credential.key }
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json.dig("data", "code")).to eq("CredentialNotFound")
-  end
 end
-

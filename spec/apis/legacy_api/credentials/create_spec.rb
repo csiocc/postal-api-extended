@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
   let(:organization) { create(:organization) }
   let!(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:other_organization) { create(:organization) }
@@ -34,10 +29,10 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     }
   end
 
-  it "creates a credential on the current server when server_id is omitted" do
+  it "creates a credential on a foreign server for admin credentials" do
     expect do
       post "/api/v1/credentials",
-           params: valid_params.to_json,
+           params: valid_params.merge(server_id: other_server.id).to_json,
            headers: json_headers_for(credential.key)
     end.to change(Credential, :count).by(1)
 
@@ -47,10 +42,12 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     expect(json.dig("data", "credential", "name")).to eq("API Credential")
 
     created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
-    expect(created_credential.server_id).to eq(server.id)
+    expect(created_credential.server_id).to eq(other_server.id)
   end
 
-  it "denies creating credentials on servers outside credential scope" do
+  it "denies creating credentials on foreign servers for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     out_of_scope_params = valid_params.merge(server_id: other_server.id)
 
     expect do
@@ -64,18 +61,17 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
-  it "allows cross-organization creation for global-admin credentials" do
-    cross_org_params = valid_params.merge(server_id: other_server.id, name: "Global Credential")
-
+  it "creates credentials on the current server for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
     post "/api/v1/credentials",
-         params: cross_org_params.to_json,
-         headers: json_headers_for(global_admin_credential.key)
+         params: valid_params.to_json,
+         headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
 
     created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
-    expect(created_credential.server_id).to eq(other_server.id)
+    expect(created_credential.server_id).to eq(server.id)
   end
 
   it "defaults type to SMTP when no type is provided" do

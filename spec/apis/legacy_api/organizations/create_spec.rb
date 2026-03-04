@@ -6,11 +6,6 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { 'global_admin' => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:other_owner) { create(:user, admin: false) }
@@ -34,7 +29,30 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     }
   end
 
-  it 'denies access for non-global credentials' do
+  it 'allows organization creation for admin credentials' do
+    admin_params = valid_params.merge(
+      name: 'admin created org',
+      permalink: 'admin-created-org',
+      owner_uuid: other_owner.uuid
+    )
+
+    expect do
+      post '/api/v1/organizations',
+           params: admin_params.to_json,
+           headers: json_headers_for(credential.key)
+    end.to change(Organization, :count).by(1)
+
+    json = JSON.parse(response.body)
+    expect(json['status']).to eq('success')
+    expect(json.dig('data', 'organization', 'permalink')).to eq('admin-created-org')
+
+    created_organization = Organization.find_by!(uuid: json.dig('data', 'organization', 'uuid'))
+    expect(created_organization.owner_id).to eq(other_owner.id)
+  end
+
+  it 'denies organization creation for non-admin owners' do
+    organization.update!(owner: create(:user, admin: false))
+
     expect do
       post '/api/v1/organizations',
            params: valid_params.to_json,
@@ -46,36 +64,15 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     expect(json.dig('data', 'code')).to eq('AccessDenied')
   end
 
-  it 'returns parameter-error for invalid permalink with global-admin credentials' do
+  it 'returns parameter-error for invalid permalink with admin credentials' do
     invalid_params = valid_params.merge(permalink: 'BAD_PERMALINK')
 
     post '/api/v1/organizations',
          params: invalid_params.to_json,
-         headers: json_headers_for(global_admin_credential.key)
+         headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json['status']).to eq('parameter-error')
-  end
-
-  it 'allows organization creation for global-admin credentials' do
-    global_admin_params = valid_params.merge(
-      name: 'global admin org',
-      permalink: 'global-admin-org',
-      owner_uuid: other_owner.uuid
-    )
-
-    expect do
-      post '/api/v1/organizations',
-           params: global_admin_params.to_json,
-           headers: json_headers_for(global_admin_credential.key)
-    end.to change(Organization, :count).by(1)
-
-    json = JSON.parse(response.body)
-    expect(json['status']).to eq('success')
-    expect(json.dig('data', 'organization', 'permalink')).to eq('global-admin-org')
-
-    created_organization = Organization.find_by!(uuid: json.dig('data', 'organization', 'uuid'))
-    expect(created_organization.owner_id).to eq(other_owner.id)
   end
 
   it 'returns UserNotFound when owner_uuid does not exist' do
@@ -88,7 +85,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     expect do
       post '/api/v1/organizations',
            params: invalid_owner_params.to_json,
-           headers: json_headers_for(global_admin_credential.key)
+           headers: json_headers_for(credential.key)
     end.not_to change(Organization, :count)
 
     json = JSON.parse(response.body)

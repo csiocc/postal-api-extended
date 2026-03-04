@@ -2,8 +2,6 @@
 
 module LegacyAPI
   class UsersController < BaseController
-    GLOBAL_ADMIN_OPTION = 'global_admin'
-
     skip_before_action :authenticate_as_server
     before_action :authenticate_as_admin
 
@@ -71,7 +69,7 @@ module LegacyAPI
         return if admin_value == :invalid
       end
 
-      if user.uuid == @current_admin_user.uuid && admin_value == false
+      if user.uuid == @current_api_user.uuid && admin_value == false
         render_error('CannotModifySelf',
                      message: 'Cannot remove your own admin status')
         return
@@ -112,7 +110,7 @@ module LegacyAPI
       user = find_user
       return unless user
 
-      if user.uuid == @current_admin_user.uuid
+      if user.uuid == @current_api_user.uuid
         render_error('CannotModifySelf',
                      message: 'Cannot delete your own user account')
         return
@@ -128,10 +126,8 @@ module LegacyAPI
       authenticate_as_server
       return if performed?
 
-      owner = @current_credential&.server&.organization&.owner
-
-      if owner&.admin?
-        @current_admin_user = owner
+      if current_api_user&.admin?
+        @current_api_user = current_api_user
       else
         render_error('AccessDenied', message: 'User management requires admin privileges')
       end
@@ -149,14 +145,16 @@ module LegacyAPI
     end
 
     def scoped_users
-      return User.all if global_admin?
+      return User.all if current_api_user.admin?
 
-      organization = @current_credential.server.organization
+      organizations = scoped_organizations_for_current_api_user
       User
         .left_outer_joins(:organization_users)
-        .where('organization_users.organization_id = :organization_id OR users.id = :owner_id',
-               organization_id: organization.id,
-               owner_id: organization.owner_id)
+        .where(
+          'organization_users.organization_id IN (:organization_ids) OR users.id IN (:owner_ids)',
+          organization_ids: organizations.select(:id),
+          owner_ids: organizations.select(:owner_id)
+        )
         .distinct
     end
 
@@ -164,10 +162,10 @@ module LegacyAPI
       organization_ids = normalize_organization_ids(raw_organization_ids)
       return nil unless organization_ids
 
-      return organization_ids if global_admin?
+      return organization_ids if current_api_user.admin?
 
-      allowed_org_id = @current_credential.server.organization_id
-      unauthorized_ids = organization_ids - [allowed_org_id]
+      allowed_ids = scoped_organizations_for_current_api_user.where(id: organization_ids).pluck(:id)
+      unauthorized_ids = organization_ids - allowed_ids
       return organization_ids if unauthorized_ids.empty?
 
       render_error('AccessDenied',
@@ -206,10 +204,6 @@ module LegacyAPI
 
       render_parameter_error("#{field_name} must be a boolean")
       :invalid
-    end
-
-    def global_admin?
-      @current_credential&.options&.[](GLOBAL_ADMIN_OPTION) == true
     end
 
     def user_hash(user, include_details: false)

@@ -2,10 +2,8 @@
 
 module LegacyAPI
   class ServersController < BaseController
-    GLOBAL_ADMIN_OPTION = "global_admin"
-
     skip_before_action :authenticate_as_server
-    before_action :authenticate_as_admin
+    before_action :authenticate_as_user
 
     def index
       servers = scoped_servers.order(:name).includes(:organization)
@@ -65,17 +63,13 @@ module LegacyAPI
 
     private
 
-    def authenticate_as_admin
+    def authenticate_as_user
       authenticate_as_server
       return if performed?
 
-      owner = @current_credential&.server&.organization&.owner
+      return if current_api_user
 
-      if owner&.admin?
-        @current_admin_user = owner
-      else
-        render_error("AccessDenied", message: "Server management requires admin privileges")
-      end
+      render_error("AccessDenied", message: "Server management requires a valid user context")
     end
 
     def find_server
@@ -89,9 +83,7 @@ module LegacyAPI
     end
 
     def scoped_servers
-      return Server.present if global_admin?
-
-      Server.present.where(organization_id: current_organization.id)
+      Server.present.where(organization_id: scoped_organizations_for_current_api_user.select(:id))
     end
 
     def resolve_organization_for_write
@@ -111,7 +103,7 @@ module LegacyAPI
         return nil
       end
 
-      if global_admin? || organization.id == current_organization.id
+      if scoped_organizations_for_current_api_user.where(id: organization.id).exists?
         organization
       else
         render_error("AccessDenied",
@@ -141,10 +133,6 @@ module LegacyAPI
 
     def current_organization
       @current_organization ||= @current_credential.server.organization
-    end
-
-    def global_admin?
-      @current_credential&.options&.[](GLOBAL_ADMIN_OPTION) == true
     end
 
     def server_hash(server, include_details: false)

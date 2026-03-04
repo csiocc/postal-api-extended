@@ -19,18 +19,17 @@ Every request needs a server API key in the header:
 X-Server-API-Key: <api_key>
 ```
 
-Organizations endpoint access is restricted to **global-admin API credentials** only.
-A valid API key without `options["global_admin"] == true` is rejected with:
+The API actor is the owner of the credential's server organization.
 
-```json
-{
-  "status": "error",
-  "data": {
-    "code": "AccessDenied",
-    "message": "Organization management requires global admin privileges"
-  }
-}
-```
+Permissions match the web behavior:
+- `GET /index`, `GET /show`, `PATCH/PUT /update`: allowed for visible organizations
+- `POST /create`, `DELETE /destroy`: admin-only
+
+Scope rules:
+- admin actor (`admin=true`): all organizations
+- non-admin actor: organizations they own or are assigned to
+
+There is no `global_admin` credential flag anymore.
 
 ## Response Format
 
@@ -49,7 +48,7 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing/invalid auth or non-global credential |
+| `AccessDenied` | Missing/invalid auth or missing admin privileges for write operations |
 | `InvalidServerAPIKey` | API key does not exist |
 | `ServerSuspended` | Credential belongs to a suspended server |
 | `OrganizationNotFound` | UUID is missing or not found (including soft-deleted organizations) |
@@ -61,13 +60,13 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 ## `GET /api/v1/organizations`
 
-Returns all non-deleted organizations (`Organization.present`), ordered by `name`.
+Returns all visible non-deleted organizations (`Organization.present`), ordered by `name`.
 
 Example:
 
 ```bash
 curl -X GET http://127.0.0.1:5000/api/v1/organizations \
-  -H "X-Server-API-Key: <global_api_key>"
+  -H "X-Server-API-Key: <api_key>"
 ```
 
 Success excerpt:
@@ -102,7 +101,7 @@ Example:
 
 ```bash
 curl -X GET http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <global_api_key>"
+  -H "X-Server-API-Key: <api_key>"
 ```
 
 Response includes:
@@ -135,13 +134,13 @@ Creates an organization.
 | `name` | string | yes | |
 | `permalink` | string | yes | lowercase letters, digits, `-` only |
 | `time_zone` | string | no | default `UTC` |
-| `owner_uuid` | string (UUID) | no | if omitted, owner defaults to current admin user from credential context |
+| `owner_uuid` | string (UUID) | no | if omitted, owner defaults to current API actor |
 
 Example:
 
 ```bash
 curl -X POST http://127.0.0.1:5000/api/v1/organizations \
-  -H "X-Server-API-Key: <global_api_key>" \
+  -H "X-Server-API-Key: <api_key>" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Created Organization",
@@ -157,6 +156,7 @@ Success:
 - message `Organization <name> created successfully`
 
 Validation and business errors:
+- non-admin actor -> `error` (`AccessDenied`)
 - invalid permalink format/reserved/duplicate -> `parameter-error`
 - unknown `owner_uuid` -> `error` (`UserNotFound`)
 
@@ -185,7 +185,7 @@ Example:
 
 ```bash
 curl -X PATCH http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <global_api_key>" \
+  -H "X-Server-API-Key: <api_key>" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Global Updated Org",
@@ -200,6 +200,7 @@ Success:
 
 Errors:
 - unknown UUID -> `OrganizationNotFound`
+- out-of-scope UUID -> `OrganizationNotFound`
 - validation failure -> `parameter-error`
 
 ---
@@ -212,7 +213,7 @@ Example:
 
 ```bash
 curl -X DELETE http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <global_api_key>"
+  -H "X-Server-API-Key: <api_key>"
 ```
 
 Success:
@@ -220,6 +221,7 @@ Success:
 - message `Organization <name> has been deleted`
 
 Errors:
+- non-admin actor -> `AccessDenied`
 - unknown UUID -> `OrganizationNotFound`
 
 ---

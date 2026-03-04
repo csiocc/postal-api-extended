@@ -1,16 +1,11 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require "rails_helper"
 
 RSpec.describe "LegacyAPI::Users#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:target_user) { create(:user) }
@@ -23,34 +18,13 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
     foreign_user.organizations << other_organization
   end
 
-  it "deletes users inside the credential scope" do
+  it "deletes users across organizations for admin credentials" do
     expect do
-      delete "/api/v1/users/#{target_user.uuid}",
+      delete "/api/v1/users/#{foreign_user.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.to change(User, :count).by(-1)
 
     expect(response).to have_http_status(200)
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-  end
-
-  it "blocks cross-organization deletion for regular scoped credentials" do
-    expect do
-      delete "/api/v1/users/#{foreign_user.uuid}",
-             headers: { "X-Server-API-Key" => credential.key }
-    end.not_to change(User, :count)
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json["data"]["code"]).to eq("UserNotFound")
-  end
-
-  it "allows cross-organization deletion for global-admin credentials" do
-    expect do
-      delete "/api/v1/users/#{foreign_user.uuid}",
-             headers: { "X-Server-API-Key" => global_admin_credential.key }
-    end.to change(User, :count).by(-1)
-
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
   end
@@ -62,6 +36,17 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
     expect(json["data"]["code"]).to eq("CannotModifySelf")
+  end
+
+  it "denies access for non-admin organization owners" do
+    organization.update!(owner: create(:user, admin: false))
+
+    delete "/api/v1/users/#{target_user.uuid}",
+           headers: { "X-Server-API-Key" => credential.key }
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json["data"]["code"]).to eq("AccessDenied")
   end
 
   it "returns error for non-existent user" do

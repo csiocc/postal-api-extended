@@ -23,6 +23,10 @@ Postal APIs use header-based authentication with API keys:
 X-Server-API-Key: your_api_key_here
 ```
 
+Authorization is derived from the owner of the credential's server organization:
+- admin owner: global organization scope
+- non-admin owner: scoped organization access
+
 ### Getting an API Key
 
 1. Log into Postal web interface

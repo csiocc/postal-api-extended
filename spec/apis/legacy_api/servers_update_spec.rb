@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:target_server) { create(:server, organization: organization, name: "Original Server") }
@@ -28,8 +23,8 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
     }
   end
 
-  it "updates a server inside credential scope" do
-    patch "/api/v1/servers/#{target_server.uuid}",
+  it "updates servers across organizations for admin credentials" do
+    patch "/api/v1/servers/#{foreign_server.uuid}",
           params: { name: "Updated Server" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -38,11 +33,13 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
     expect(json["status"]).to eq("success")
     expect(json.dig("data", "server", "name")).to eq("Updated Server")
 
-    target_server.reload
-    expect(target_server.name).to eq("Updated Server")
+    foreign_server.reload
+    expect(foreign_server.name).to eq("Updated Server")
   end
 
-  it "blocks cross-organization updates for regular scoped credentials" do
+  it "blocks cross-organization updates for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     patch "/api/v1/servers/#{foreign_server.uuid}",
           params: { name: "Blocked Update" }.to_json,
           headers: json_headers_for(credential.key)
@@ -52,17 +49,19 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
     expect(json.dig("data", "code")).to eq("ServerNotFound")
   end
 
-  it "allows cross-organization updates for global-admin credentials" do
-    patch "/api/v1/servers/#{foreign_server.uuid}",
-          params: { name: "Global Updated" }.to_json,
-          headers: json_headers_for(global_admin_credential.key)
+  it "allows own-scope updates for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
+    patch "/api/v1/servers/#{target_server.uuid}",
+          params: { name: "Scoped Updated" }.to_json,
+          headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "name")).to eq("Global Updated")
+    expect(json.dig("data", "server", "name")).to eq("Scoped Updated")
 
-    foreign_server.reload
-    expect(foreign_server.name).to eq("Global Updated")
+    target_server.reload
+    expect(target_server.name).to eq("Scoped Updated")
   end
 
   it "returns parameter-error for invalid mode" do

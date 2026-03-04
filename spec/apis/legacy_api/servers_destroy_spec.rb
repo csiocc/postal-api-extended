@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization, name: "Credential Server") }
   let(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:target_server) { create(:server, organization: organization, name: "Target Server") }
@@ -21,7 +16,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "soft deletes a server inside credential scope" do
+  it "soft deletes a server across organizations for admin credentials" do
     delete "/api/v1/servers/#{target_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
@@ -31,7 +26,18 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
     expect(target_server.reload.deleted_at).to be_present
   end
 
-  it "blocks cross-organization deletion for regular scoped credentials" do
+  it "soft deletes a foreign server for admin credentials" do
+    delete "/api/v1/servers/#{foreign_server.uuid}",
+           headers: { "X-Server-API-Key" => credential.key }
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+    expect(foreign_server.reload.deleted_at).to be_present
+  end
+
+  it "blocks cross-organization deletion for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
     delete "/api/v1/servers/#{foreign_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
@@ -41,13 +47,15 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
     expect(foreign_server.reload.deleted_at).to be_nil
   end
 
-  it "allows cross-organization deletion for global-admin credentials" do
-    delete "/api/v1/servers/#{foreign_server.uuid}",
-           headers: { "X-Server-API-Key" => global_admin_credential.key }
+  it "allows own-organization deletion for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
+
+    delete "/api/v1/servers/#{target_server.uuid}",
+           headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
-    expect(foreign_server.reload.deleted_at).to be_present
+    expect(target_server.reload.deleted_at).to be_present
   end
 
   it "returns error for non-existent server" do
