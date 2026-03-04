@@ -25,8 +25,6 @@ The API actor is derived from the owner of the credential's server organization.
 - If that owner has `admin=true`: full user management scope across organizations.
 - If not: request is rejected with `AccessDenied`.
 
-There is no `global_admin` credential flag anymore.
-
 ## Response Format
 
 ```json

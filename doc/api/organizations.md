@@ -29,8 +29,6 @@ Scope rules:
 - admin actor (`admin=true`): all organizations
 - non-admin actor: organizations they own or are assigned to
 
-There is no `global_admin` credential flag anymore.
-
 ## Response Format
 
 Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
