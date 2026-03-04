@@ -9,6 +9,7 @@ Complete API reference for Postal mail server.
 - [Server Management API](./servers.md) - Create, read, update, and delete servers
 - [Credential Management API](./credentials.md) - Create, read, update, and delete credentials
 - [Organization Management API](./organizations.md) - Create, read, update, and delete organizations
+- [Domain Management API](./domains.md) - Create, read, update, verify, and delete domains
 
 ### Legacy API (v1)
 - Send Messages
@@ -82,6 +83,12 @@ All API responses follow this structure:
 | Organizations   | `GET /api/v1/organizations/:uuid`  | Get organization details   |
 | Organizations   | `PATCH /api/v1/organizations/:uuid`| Update organization        |
 | Organizations   | `DELETE /api/v1/organizations/:uuid`| Delete organization       |
+| Domains         | `GET /api/v1/domains`        | List visible domains       |
+| Domains         | `POST /api/v1/domains`       | Create new domain          |
+| Domains         | `GET /api/v1/domains/:uuid`  | Get domain details         |
+| Domains         | `PATCH /api/v1/domains/:uuid`| Update domain              |
+| Domains         | `DELETE /api/v1/domains/:uuid`| Delete domain             |
+| Domains         | `POST /api/v1/domains/:uuid/verify`| Trigger DNS verification |
 | Messages        | `POST /api/v1/send/message`| Send email message         |
 | Messages        | `POST /api/v1/send/raw`    | Send raw email             |
 

@@ -6,11 +6,6 @@ RSpec.describe "LegacyAPI::Domains#create", type: :request do
   let(:organization) { create(:organization) }
   let!(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
-  let(:global_admin_credential) do
-    create(:credential,
-           server: server,
-           options: { "global_admin" => true })
-  end
 
   let(:admin_user) { create(:user, admin: true) }
   let(:other_organization) { create(:organization) }
@@ -63,7 +58,22 @@ RSpec.describe "LegacyAPI::Domains#create", type: :request do
     expect(created_domain.owner).to eq(organization)
   end
 
-  it "denies creating domains on servers outside credential scope" do
+  it "allows cross-organization creation for admin credentials" do
+    params = valid_params.merge(name: "cross-org.example", server_id: other_server.id)
+
+    post "/api/v1/domains",
+         params: params.to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+
+    created_domain = Domain.find_by!(uuid: json.dig("data", "domain", "uuid"))
+    expect(created_domain.owner).to eq(other_server)
+  end
+
+  it "denies creating domains on servers outside credential scope for non-admin owners" do
+    organization.update!(owner: create(:user, admin: false))
     params = valid_params.merge(server_id: other_server.id)
 
     expect do
@@ -77,18 +87,22 @@ RSpec.describe "LegacyAPI::Domains#create", type: :request do
     expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
-  it "allows cross-organization creation for global-admin credentials" do
-    params = valid_params.merge(name: "cross-org.example", server_id: other_server.id)
+  it "allows creating domains in assigned organizations for non-admin owners" do
+    non_admin_user = create(:user, admin: false)
+    organization.update!(owner: non_admin_user)
+    OrganizationUser.create!(organization: other_organization, user: non_admin_user, admin: false, all_servers: true)
+
+    params = valid_params.merge(name: "assigned-org.example", organization_id: other_organization.id)
 
     post "/api/v1/domains",
          params: params.to_json,
-         headers: json_headers_for(global_admin_credential.key)
+         headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
 
     created_domain = Domain.find_by!(uuid: json.dig("data", "domain", "uuid"))
-    expect(created_domain.owner).to eq(other_server)
+    expect(created_domain.owner).to eq(other_organization)
   end
 
   it "returns parameter-error when server_id and organization_id are both provided" do
@@ -102,12 +116,21 @@ RSpec.describe "LegacyAPI::Domains#create", type: :request do
     expect(json["status"]).to eq("parameter-error")
   end
 
-  it "returns parameter-error when domain is already assigned anywhere else" do
-    create(:domain, owner: organization, name: "duplicate.example")
+  it "returns parameter-error when scope is invalid" do
+    post "/api/v1/domains",
+         params: valid_params.merge(scope: "team").to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+  end
+
+  it "returns parameter-error when domain already exists for the same owner" do
+    create(:domain, owner: server, name: "duplicate.example")
 
     post "/api/v1/domains",
-         params: valid_params.merge(name: "duplicate.example", server_id: other_server.id).to_json,
-         headers: json_headers_for(global_admin_credential.key)
+         params: valid_params.merge(name: "duplicate.example").to_json,
+         headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")

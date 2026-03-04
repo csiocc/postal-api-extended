@@ -35,6 +35,14 @@ Rails.application.routes.draw do
   match "/api/v1/credentials/:uuid" => "legacy_api/credentials#update", via: [:patch, :put]
   match "/api/v1/credentials/:uuid" => "legacy_api/credentials#destroy", via: [:delete]
 
+  # Domain Management API Routes
+  match "/api/v1/domains" => "legacy_api/domains#index", via: [:get]
+  match "/api/v1/domains" => "legacy_api/domains#create", via: [:post]
+  match "/api/v1/domains/:uuid" => "legacy_api/domains#show", via: [:get]
+  match "/api/v1/domains/:uuid" => "legacy_api/domains#update", via: [:patch, :put]
+  match "/api/v1/domains/:uuid" => "legacy_api/domains#destroy", via: [:delete]
+  match "/api/v1/domains/:uuid/verify" => "legacy_api/domains#verify", via: [:post]
+
   scope "org/:org_permalink", as: "organization" do
     resources :domains, only: [:index, :new, :create, :destroy] do
       match :verify, on: :member, via: [:get, :post]
