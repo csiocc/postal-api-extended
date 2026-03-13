@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Users#show", type: :request do
+RSpec.describe "ManagementAPI::Users#show", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -19,7 +19,7 @@ RSpec.describe "LegacyAPI::Users#show", type: :request do
   end
 
   it "returns user details for users inside the credential scope" do
-    get "/api/v1/users/#{target_user.uuid}",
+    get "/api/v1/manage/users/#{target_user.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
@@ -30,7 +30,7 @@ RSpec.describe "LegacyAPI::Users#show", type: :request do
   end
 
   it "allows cross-organization user reads for admin credentials" do
-    get "/api/v1/users/#{foreign_user.uuid}",
+    get "/api/v1/manage/users/#{foreign_user.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -41,7 +41,7 @@ RSpec.describe "LegacyAPI::Users#show", type: :request do
   it "denies access for non-admin organization owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/users/#{foreign_user.uuid}",
+    get "/api/v1/manage/users/#{foreign_user.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)

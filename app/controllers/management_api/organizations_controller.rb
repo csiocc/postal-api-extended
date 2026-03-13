@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module LegacyAPI
+module ManagementAPI
   class OrganizationsController < BaseController
     skip_before_action :authenticate_as_server
     before_action :authenticate_as_user

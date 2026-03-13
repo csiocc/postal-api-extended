@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Credentials#update", type: :request do
+RSpec.describe "ManagementAPI::Credentials#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -25,7 +25,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   end
 
   it "blocks cross-organization updates for admin credentials" do
-    patch "/api/v1/credentials/#{foreign_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{foreign_credential.uuid}",
           params: { name: "Updated Credential", hold: true }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -42,7 +42,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   it "blocks cross-organization updates for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/credentials/#{foreign_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{foreign_credential.uuid}",
           params: { name: "Blocked Update" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -54,7 +54,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   it "allows scoped updates for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/credentials/#{target_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { name: "Scoped Updated", hold: true }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -69,7 +69,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   end
 
   it "accepts numeric hold values on update" do
-    patch "/api/v1/credentials/#{target_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { hold: 0 }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -79,7 +79,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   end
 
   it "returns parameter-error when changing the key is not allowed" do
-    patch "/api/v1/credentials/#{target_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { key: "new-key-value" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -89,7 +89,7 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
   end
 
   it "returns parameter-error for invalid hold value" do
-    patch "/api/v1/credentials/#{target_credential.uuid}",
+    patch "/api/v1/manage/credentials/#{target_credential.uuid}",
          params: { hold: "not-a-boolean" }.to_json,
           headers: json_headers_for(credential.key)
 

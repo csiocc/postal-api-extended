@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Domains#destroy", type: :request do
+RSpec.describe "ManagementAPI::Domains#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -20,7 +20,7 @@ RSpec.describe "LegacyAPI::Domains#destroy", type: :request do
 
   it "deletes domains in scope" do
     expect do
-      delete "/api/v1/domains/#{domain.uuid}",
+      delete "/api/v1/manage/domains/#{domain.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.to change(Domain, :count).by(-1)
 
@@ -30,7 +30,7 @@ RSpec.describe "LegacyAPI::Domains#destroy", type: :request do
 
   it "does not delete foreign domains for admin credentials" do
     expect do
-      delete "/api/v1/domains/#{foreign_domain.uuid}",
+      delete "/api/v1/manage/domains/#{foreign_domain.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.not_to change(Domain, :count)
 
@@ -43,7 +43,7 @@ RSpec.describe "LegacyAPI::Domains#destroy", type: :request do
     organization.update!(owner: create(:user, admin: false))
 
     expect do
-      delete "/api/v1/domains/#{foreign_domain.uuid}",
+      delete "/api/v1/manage/domains/#{foreign_domain.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.not_to change(Domain, :count)
 

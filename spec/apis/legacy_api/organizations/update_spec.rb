@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
+RSpec.describe 'ManagementAPI::Organizations#update', type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -22,7 +22,7 @@ RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
   end
 
   it 'allows cross-organization updates for admin credentials' do
-    patch "/api/v1/organizations/#{other_organization.uuid}",
+    patch "/api/v1/manage/organizations/#{other_organization.uuid}",
           params: { name: 'Global Updated' }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -37,7 +37,7 @@ RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
   it 'allows scoped updates for non-admin owners' do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/organizations/#{organization.uuid}",
+    patch "/api/v1/manage/organizations/#{organization.uuid}",
           params: { name: 'Scoped Updated', time_zone: 'Europe/Zurich' }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -49,7 +49,7 @@ RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
   it 'does not disclose foreign organizations for non-admin owners' do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/organizations/#{other_organization.uuid}",
+    patch "/api/v1/manage/organizations/#{other_organization.uuid}",
           params: { name: 'Blocked' }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -59,7 +59,7 @@ RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
   end
 
   it "returns parameter-error when the update is invalid" do
-    patch "/api/v1/organizations/#{organization.uuid}",
+    patch "/api/v1/manage/organizations/#{organization.uuid}",
           params: { name: "" }.to_json,
           headers: json_headers_for(credential.key)
 

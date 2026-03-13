@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Users#create', type: :request do
+RSpec.describe 'ManagementAPI::Users#create', type: :request do
   let(:api_user) { create(:user, admin: true) }
   let!(:organization) { create(:organization, owner: api_user) }
   let!(:server) { create(:server, organization: organization) }
@@ -31,7 +31,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
 
   it 'creates a new user with cross-organization assignments for admin credentials' do
     expect do
-      post '/api/v1/users',
+      post '/api/v1/manage/users',
            params: valid_params.to_json,
            headers: json_headers_for(credential.key)
     end.to change(User, :count).by(1)
@@ -51,7 +51,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
     non_admin_credential = create(:credential, server: non_admin_server)
 
     expect do
-      post '/api/v1/users',
+      post '/api/v1/manage/users',
            params: valid_params.to_json,
            headers: json_headers_for(non_admin_credential.key)
     end.not_to change(User, :count)
@@ -64,7 +64,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   it 'returns parameter-error for invalid email' do
     invalid_params = valid_params.merge(email_address: 'invalid-email')
 
-    post '/api/v1/users',
+    post '/api/v1/manage/users',
          params: invalid_params.to_json,
          headers: json_headers_for(credential.key)
 
@@ -75,7 +75,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   it 'returns parameter-error for password mismatch' do
     invalid_params = valid_params.merge(password_confirmation: 'different')
 
-    post '/api/v1/users',
+    post '/api/v1/manage/users',
          params: invalid_params.to_json,
          headers: json_headers_for(credential.key)
 
@@ -84,7 +84,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   end
 
   it "returns parameter-error for invalid admin values" do
-    post "/api/v1/users",
+    post "/api/v1/manage/users",
          params: valid_params.merge(admin: "maybe").to_json,
          headers: json_headers_for(credential.key)
 
@@ -94,7 +94,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   end
 
   it "accepts numeric admin values" do
-    post "/api/v1/users",
+    post "/api/v1/manage/users",
          params: valid_params.merge(email_address: "admin-#{SecureRandom.hex(4)}@test.com", admin: 1).to_json,
          headers: json_headers_for(credential.key)
 
@@ -104,7 +104,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   end
 
   it "returns parameter-error when organization_ids is not an array" do
-    post "/api/v1/users",
+    post "/api/v1/manage/users",
          params: valid_params.merge(organization_ids: organization.id).to_json,
          headers: json_headers_for(credential.key)
 
@@ -114,7 +114,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   end
 
   it "returns parameter-error when organization_ids contains non-integers" do
-    post "/api/v1/users",
+    post "/api/v1/manage/users",
          params: valid_params.merge(organization_ids: [organization.id, "abc"]).to_json,
          headers: json_headers_for(credential.key)
 
@@ -124,7 +124,7 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
   end
 
   it 'returns parameter-error for malformed JSON payloads' do
-    post '/api/v1/users',
+    post '/api/v1/manage/users',
          params: '{"email_address":"broken-json"',
          headers: json_headers_for(credential.key)
 

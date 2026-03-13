@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Users#destroy", type: :request do
+RSpec.describe "ManagementAPI::Users#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -20,7 +20,7 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
 
   it "deletes users across organizations for admin credentials" do
     expect do
-      delete "/api/v1/users/#{foreign_user.uuid}",
+      delete "/api/v1/manage/users/#{foreign_user.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.to change(User, :count).by(-1)
 
@@ -30,7 +30,7 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
   end
 
   it "prevents self-deletion" do
-    delete "/api/v1/users/#{admin_user.uuid}",
+    delete "/api/v1/manage/users/#{admin_user.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -41,7 +41,7 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
   it "denies access for non-admin organization owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    delete "/api/v1/users/#{target_user.uuid}",
+    delete "/api/v1/manage/users/#{target_user.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -50,7 +50,7 @@ RSpec.describe "LegacyAPI::Users#destroy", type: :request do
   end
 
   it "returns error for non-existent user" do
-    delete "/api/v1/users/invalid-uuid",
+    delete "/api/v1/manage/users/invalid-uuid",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)

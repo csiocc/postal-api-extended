@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Servers#create", type: :request do
+RSpec.describe "ManagementAPI::Servers#create", type: :request do
   let(:organization) { create(:organization) }
   let!(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
@@ -32,7 +32,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
 
   it "denies creating a server outside the credential organization for admin credentials" do
     expect do
-      post "/api/v1/servers",
+      post "/api/v1/manage/servers",
            params: valid_params.merge(
              name: "Cross Org Server",
              permalink: "cross-org-server",
@@ -57,7 +57,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     )
 
     expect do
-      post "/api/v1/servers",
+      post "/api/v1/manage/servers",
            params: out_of_scope_params.to_json,
            headers: json_headers_for(credential.key)
     end.not_to change(Server, :count)
@@ -69,7 +69,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
 
   it "allows creating a server in the current organization for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: valid_params.to_json,
          headers: json_headers_for(credential.key)
 
@@ -81,7 +81,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   end
 
   it "defaults to the credential organization when organization_id is omitted" do
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: valid_params.except(:organization_id).merge(permalink: "default-org-server").to_json,
          headers: json_headers_for(credential.key)
 
@@ -93,7 +93,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   end
 
   it "returns parameter-error for invalid organization_id" do
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: valid_params.merge(organization_id: "abc").to_json,
          headers: json_headers_for(credential.key)
 
@@ -103,7 +103,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   end
 
   it "returns OrganizationNotFound for unknown organization_id" do
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: valid_params.merge(organization_id: 9_999_999).to_json,
          headers: json_headers_for(credential.key)
 
@@ -115,7 +115,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   it "returns parameter-error for invalid mode" do
     invalid_params = valid_params.merge(mode: "BrokenMode")
 
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: invalid_params.to_json,
          headers: json_headers_for(credential.key)
 
@@ -124,7 +124,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   end
 
   it "returns parameter-error for malformed JSON payloads" do
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: '{"name":"broken-json"',
          headers: json_headers_for(credential.key)
 
@@ -137,7 +137,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
   it "returns AccessDenied when the credential has no user context" do
     organization.update_column(:owner_id, nil)
 
-    post "/api/v1/servers",
+    post "/api/v1/manage/servers",
          params: valid_params.to_json,
          headers: json_headers_for(credential.key)
 

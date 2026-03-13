@@ -7,41 +7,37 @@ Rails.application.routes.draw do
   match "/api/v1/messages/message" => "legacy_api/messages#message", via: [:get, :post, :patch, :put]
   match "/api/v1/messages/deliveries" => "legacy_api/messages#deliveries", via: [:get, :post, :patch, :put]
 
-  # User Management API Routes
-  match "/api/v1/users" => "legacy_api/users#index", via: [:get]
-  match "/api/v1/users" => "legacy_api/users#create", via: [:post]
-  match "/api/v1/users/:uuid" => "legacy_api/users#show", via: [:get]
-  match "/api/v1/users/:uuid" => "legacy_api/users#update", via: [:patch, :put]
-  match "/api/v1/users/:uuid" => "legacy_api/users#destroy", via: [:delete]
+  # Management API Routes
+  match "/api/v1/manage/users" => "management_api/users#index", via: [:get]
+  match "/api/v1/manage/users" => "management_api/users#create", via: [:post]
+  match "/api/v1/manage/users/:uuid" => "management_api/users#show", via: [:get]
+  match "/api/v1/manage/users/:uuid" => "management_api/users#update", via: [:patch, :put]
+  match "/api/v1/manage/users/:uuid" => "management_api/users#destroy", via: [:delete]
 
-  # Organization Management API Routes
-  match "/api/v1/organizations" => "legacy_api/organizations#index", via: [:get]
-  match "/api/v1/organizations" => "legacy_api/organizations#create", via: [:post]
-  match "/api/v1/organizations/:uuid" => "legacy_api/organizations#show", via: [:get]
-  match "/api/v1/organizations/:uuid" => "legacy_api/organizations#update", via: [:patch, :put]
-  match "/api/v1/organizations/:uuid" => "legacy_api/organizations#destroy", via: [:delete]
+  match "/api/v1/manage/organizations" => "management_api/organizations#index", via: [:get]
+  match "/api/v1/manage/organizations" => "management_api/organizations#create", via: [:post]
+  match "/api/v1/manage/organizations/:uuid" => "management_api/organizations#show", via: [:get]
+  match "/api/v1/manage/organizations/:uuid" => "management_api/organizations#update", via: [:patch, :put]
+  match "/api/v1/manage/organizations/:uuid" => "management_api/organizations#destroy", via: [:delete]
 
-  # Server Management API Routes
-  match "/api/v1/servers" => "legacy_api/servers#index", via: [:get]
-  match "/api/v1/servers" => "legacy_api/servers#create", via: [:post]
-  match "/api/v1/servers/:uuid" => "legacy_api/servers#show", via: [:get]
-  match "/api/v1/servers/:uuid" => "legacy_api/servers#update", via: [:patch, :put]
-  match "/api/v1/servers/:uuid" => "legacy_api/servers#destroy", via: [:delete]
+  match "/api/v1/manage/servers" => "management_api/servers#index", via: [:get]
+  match "/api/v1/manage/servers" => "management_api/servers#create", via: [:post]
+  match "/api/v1/manage/servers/:uuid" => "management_api/servers#show", via: [:get]
+  match "/api/v1/manage/servers/:uuid" => "management_api/servers#update", via: [:patch, :put]
+  match "/api/v1/manage/servers/:uuid" => "management_api/servers#destroy", via: [:delete]
 
-  # Credential Management API Routes
-  match "/api/v1/credentials" => "legacy_api/credentials#index", via: [:get]
-  match "/api/v1/credentials" => "legacy_api/credentials#create", via: [:post]
-  match "/api/v1/credentials/:uuid" => "legacy_api/credentials#show", via: [:get]
-  match "/api/v1/credentials/:uuid" => "legacy_api/credentials#update", via: [:patch, :put]
-  match "/api/v1/credentials/:uuid" => "legacy_api/credentials#destroy", via: [:delete]
+  match "/api/v1/manage/credentials" => "management_api/credentials#index", via: [:get]
+  match "/api/v1/manage/credentials" => "management_api/credentials#create", via: [:post]
+  match "/api/v1/manage/credentials/:uuid" => "management_api/credentials#show", via: [:get]
+  match "/api/v1/manage/credentials/:uuid" => "management_api/credentials#update", via: [:patch, :put]
+  match "/api/v1/manage/credentials/:uuid" => "management_api/credentials#destroy", via: [:delete]
 
-  # Domain Management API Routes
-  match "/api/v1/domains" => "legacy_api/domains#index", via: [:get]
-  match "/api/v1/domains" => "legacy_api/domains#create", via: [:post]
-  match "/api/v1/domains/:uuid" => "legacy_api/domains#show", via: [:get]
-  match "/api/v1/domains/:uuid" => "legacy_api/domains#update", via: [:patch, :put]
-  match "/api/v1/domains/:uuid" => "legacy_api/domains#destroy", via: [:delete]
-  match "/api/v1/domains/:uuid/verify" => "legacy_api/domains#verify", via: [:post]
+  match "/api/v1/manage/domains" => "management_api/domains#index", via: [:get]
+  match "/api/v1/manage/domains" => "management_api/domains#create", via: [:post]
+  match "/api/v1/manage/domains/:uuid" => "management_api/domains#show", via: [:get]
+  match "/api/v1/manage/domains/:uuid" => "management_api/domains#update", via: [:patch, :put]
+  match "/api/v1/manage/domains/:uuid" => "management_api/domains#destroy", via: [:delete]
+  match "/api/v1/manage/domains/:uuid/verify" => "management_api/domains#verify", via: [:post]
 
   scope "org/:org_permalink", as: "organization" do
     resources :domains, only: [:index, :new, :create, :destroy] do

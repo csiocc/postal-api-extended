@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Servers#show", type: :request do
+RSpec.describe "ManagementAPI::Servers#show", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -16,7 +16,7 @@ RSpec.describe "LegacyAPI::Servers#show", type: :request do
   end
 
   it "returns server details inside the credential scope" do
-    get "/api/v1/servers/#{server.uuid}",
+    get "/api/v1/manage/servers/#{server.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
@@ -27,7 +27,7 @@ RSpec.describe "LegacyAPI::Servers#show", type: :request do
   end
 
   it "does not disclose foreign servers for admin credentials" do
-    get "/api/v1/servers/#{foreign_server.uuid}",
+    get "/api/v1/manage/servers/#{foreign_server.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -38,7 +38,7 @@ RSpec.describe "LegacyAPI::Servers#show", type: :request do
   it "does not disclose foreign servers for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/servers/#{foreign_server.uuid}",
+    get "/api/v1/manage/servers/#{foreign_server.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)

@@ -1,15 +1,15 @@
-# Postal API: Servers (Legacy v1)
+# Postal API: Management Servers
 
-This page documents the server endpoints under `/api/v1/servers`.
+This page documents the server endpoints under `/api/v1/manage/servers`.
 
 ## Endpoints
 
-- `GET /api/v1/servers`
-- `POST /api/v1/servers`
-- `GET /api/v1/servers/:uuid`
-- `PATCH /api/v1/servers/:uuid`
-- `PUT /api/v1/servers/:uuid`
-- `DELETE /api/v1/servers/:uuid`
+- `GET /api/v1/manage/servers`
+- `POST /api/v1/manage/servers`
+- `GET /api/v1/manage/servers/:uuid`
+- `PATCH /api/v1/manage/servers/:uuid`
+- `PUT /api/v1/manage/servers/:uuid`
+- `DELETE /api/v1/manage/servers/:uuid`
 
 ## Authentication and Authorization
 
@@ -52,13 +52,13 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 ---
 
-## `GET /api/v1/servers`
+## `GET /api/v1/manage/servers`
 
 Returns servers visible in the current scope (`Server.present`, ordered by `name`).
 
 ---
 
-## `GET /api/v1/servers/:uuid`
+## `GET /api/v1/manage/servers/:uuid`
 
 Returns one server.
 
@@ -75,7 +75,7 @@ If the server is missing or outside scope:
 
 ---
 
-## `POST /api/v1/servers`
+## `POST /api/v1/manage/servers`
 
 Creates a server.
 
@@ -92,7 +92,7 @@ Validation or malformed input returns `parameter-error`.
 
 ---
 
-## `PATCH/PUT /api/v1/servers/:uuid`
+## `PATCH/PUT /api/v1/manage/servers/:uuid`
 
 Updates an existing server.
 
@@ -105,7 +105,7 @@ Unknown UUID/out-of-scope => `ServerNotFound`.
 
 ---
 
-## `DELETE /api/v1/servers/:uuid`
+## `DELETE /api/v1/manage/servers/:uuid`
 
 Soft-deletes a server.
 

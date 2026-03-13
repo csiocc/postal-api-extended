@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module LegacyAPI
+module ManagementAPI
   class DomainsController < BaseController
     STATUS_VALUES = %w[pending pending_dns verifying verified failed].freeze
     DOMAIN_SCOPE_VALUES = %w[server organization].freeze
@@ -99,7 +99,7 @@ module LegacyAPI
       force = normalized_optional_boolean(api_params, "force")
       return if force == :invalid
 
-      # Legacy API has no rate limiter yet; force flag is accepted for compatibility.
+      # The management API has no rate limiter yet; force is accepted for compatibility.
       domain.check_dns(:manual)
 
       render_success(domain: domain_hash(domain, include_details: true))
@@ -307,7 +307,7 @@ module LegacyAPI
 
     def log_domain_verification_failure(domain, error)
       Rails.logger.error(
-        "Legacy API domain verification failed for domain=#{domain&.uuid || params[:uuid]} " \
+        "Management API domain verification failed for domain=#{domain&.uuid || params[:uuid]} " \
         "server=#{@current_credential&.server&.uuid} error_class=#{error.class} error=#{error.message}"
       )
     end

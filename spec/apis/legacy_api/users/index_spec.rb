@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Users#index", type: :request do
+RSpec.describe "ManagementAPI::Users#index", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -19,7 +19,7 @@ RSpec.describe "LegacyAPI::Users#index", type: :request do
   end
 
   it "returns users across organizations for admin credentials" do
-    get "/api/v1/users", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/users", headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
@@ -33,7 +33,7 @@ RSpec.describe "LegacyAPI::Users#index", type: :request do
   it "denies access to non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/users", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/users", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")

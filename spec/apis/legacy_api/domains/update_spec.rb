@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Domains#update", type: :request do
+RSpec.describe "ManagementAPI::Domains#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -25,7 +25,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   end
 
   it "updates domain attributes in scope" do
-    patch "/api/v1/domains/#{domain.uuid}",
+    patch "/api/v1/manage/domains/#{domain.uuid}",
           params: { name: "updated-domain.example", use_for_any: true, outgoing: false }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -40,7 +40,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   it "rotates DKIM key when requested" do
     previous_key = domain.dkim_private_key
 
-    patch "/api/v1/domains/#{domain.uuid}",
+    patch "/api/v1/manage/domains/#{domain.uuid}",
           params: { rotate_dkim_key: true }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -52,7 +52,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   end
 
   it "accepts numeric boolean values on update" do
-    patch "/api/v1/domains/#{domain.uuid}",
+    patch "/api/v1/manage/domains/#{domain.uuid}",
           params: { outgoing: 1, incoming: 0, use_for_any: 1 }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -66,7 +66,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   end
 
   it "returns parameter-error for invalid verification methods" do
-    patch "/api/v1/domains/#{domain.uuid}",
+    patch "/api/v1/manage/domains/#{domain.uuid}",
           params: { verification_method: "Broken" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -75,7 +75,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   end
 
   it "returns parameter-error for invalid boolean fields" do
-    patch "/api/v1/domains/#{domain.uuid}",
+    patch "/api/v1/manage/domains/#{domain.uuid}",
           params: { rotate_dkim_key: "maybe" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -86,7 +86,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   it "does not disclose foreign domains for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/domains/#{foreign_domain.uuid}",
+    patch "/api/v1/manage/domains/#{foreign_domain.uuid}",
           params: { name: "blocked.example" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -96,7 +96,7 @@ RSpec.describe "LegacyAPI::Domains#update", type: :request do
   end
 
   it "does not disclose foreign domains for admin credentials either" do
-    patch "/api/v1/domains/#{foreign_domain.uuid}",
+    patch "/api/v1/manage/domains/#{foreign_domain.uuid}",
           params: { name: "blocked.example" }.to_json,
           headers: json_headers_for(credential.key)
 

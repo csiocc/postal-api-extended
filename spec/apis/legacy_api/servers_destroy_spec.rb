@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
+RSpec.describe "ManagementAPI::Servers#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization, name: "Credential Server") }
   let(:credential) { create(:credential, server: server) }
@@ -17,7 +17,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   end
 
   it "soft deletes a server inside the credential organization" do
-    delete "/api/v1/servers/#{target_server.uuid}",
+    delete "/api/v1/manage/servers/#{target_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
@@ -27,7 +27,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   end
 
   it "does not delete foreign servers for admin credentials" do
-    delete "/api/v1/servers/#{foreign_server.uuid}",
+    delete "/api/v1/manage/servers/#{foreign_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -39,7 +39,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   it "blocks cross-organization deletion for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    delete "/api/v1/servers/#{foreign_server.uuid}",
+    delete "/api/v1/manage/servers/#{foreign_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -51,7 +51,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   it "allows own-organization deletion for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    delete "/api/v1/servers/#{target_server.uuid}",
+    delete "/api/v1/manage/servers/#{target_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
@@ -60,7 +60,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
   end
 
   it "returns error for non-existent server" do
-    delete "/api/v1/servers/invalid-uuid",
+    delete "/api/v1/manage/servers/invalid-uuid",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)

@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Servers#update", type: :request do
+RSpec.describe "ManagementAPI::Servers#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -24,7 +24,7 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
   end
 
   it "blocks cross-organization updates for admin credentials" do
-    patch "/api/v1/servers/#{foreign_server.uuid}",
+    patch "/api/v1/manage/servers/#{foreign_server.uuid}",
           params: { name: "Updated Server" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -40,7 +40,7 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
   it "blocks cross-organization updates for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/servers/#{foreign_server.uuid}",
+    patch "/api/v1/manage/servers/#{foreign_server.uuid}",
           params: { name: "Blocked Update" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -52,7 +52,7 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
   it "allows own-scope updates for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/servers/#{target_server.uuid}",
+    patch "/api/v1/manage/servers/#{target_server.uuid}",
           params: { name: "Scoped Updated" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -65,7 +65,7 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
   end
 
   it "returns parameter-error for invalid mode" do
-    patch "/api/v1/servers/#{target_server.uuid}",
+    patch "/api/v1/manage/servers/#{target_server.uuid}",
           params: { mode: "InvalidMode" }.to_json,
           headers: json_headers_for(credential.key)
 

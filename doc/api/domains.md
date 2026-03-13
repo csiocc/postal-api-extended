@@ -1,16 +1,16 @@
-# Postal API: Domains (Legacy v1)
+# Postal API: Management Domains
 
-This page documents domain endpoints under `/api/v1/domains`.
+This page documents domain endpoints under `/api/v1/manage/domains`.
 
 ## Endpoints
 
-- `GET /api/v1/domains`
-- `POST /api/v1/domains`
-- `GET /api/v1/domains/:uuid`
-- `PATCH /api/v1/domains/:uuid`
-- `PUT /api/v1/domains/:uuid`
-- `DELETE /api/v1/domains/:uuid`
-- `POST /api/v1/domains/:uuid/verify`
+- `GET /api/v1/manage/domains`
+- `POST /api/v1/manage/domains`
+- `GET /api/v1/manage/domains/:uuid`
+- `PATCH /api/v1/manage/domains/:uuid`
+- `PUT /api/v1/manage/domains/:uuid`
+- `DELETE /api/v1/manage/domains/:uuid`
+- `POST /api/v1/manage/domains/:uuid/verify`
 
 ## Authentication and Authorization
 
@@ -76,7 +76,7 @@ Detailed responses (`show`, `create`, `update`, `verify`) also include:
 
 ---
 
-## `GET /api/v1/domains`
+## `GET /api/v1/manage/domains`
 
 Returns all visible domains.
 
@@ -92,7 +92,7 @@ Success payload:
 
 ---
 
-## `GET /api/v1/domains/:uuid`
+## `GET /api/v1/manage/domains/:uuid`
 
 Returns one domain with full details.
 
@@ -109,7 +109,7 @@ Out-of-scope or unknown UUID:
 
 ---
 
-## `POST /api/v1/domains`
+## `POST /api/v1/manage/domains`
 
 Creates a domain.
 
@@ -130,7 +130,7 @@ Rules:
 
 ---
 
-## `PATCH/PUT /api/v1/domains/:uuid`
+## `PATCH/PUT /api/v1/manage/domains/:uuid`
 
 Updates an existing domain.
 
@@ -146,7 +146,7 @@ Supported fields:
 
 ---
 
-## `POST /api/v1/domains/:uuid/verify`
+## `POST /api/v1/manage/domains/:uuid/verify`
 
 Triggers DNS checks (SPF, DKIM, MX, return-path) and updates verification details.
 
@@ -157,7 +157,7 @@ Success returns updated domain details including `verification`.
 
 ---
 
-## `DELETE /api/v1/domains/:uuid`
+## `DELETE /api/v1/manage/domains/:uuid`
 
 Deletes a domain.
 

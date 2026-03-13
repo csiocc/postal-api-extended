@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Credentials#index", type: :request do
+RSpec.describe "ManagementAPI::Credentials#index", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization, name: "Credential Server") }
   let(:credential) { create(:credential, server: server) }
@@ -18,7 +18,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   end
 
   it "returns only credentials from the credential organization for admin credentials" do
-    get "/api/v1/credentials", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/credentials", headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
@@ -31,7 +31,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   end
 
   it "returns access denied for foreign server_id filters even for admin credentials" do
-    get "/api/v1/credentials",
+    get "/api/v1/manage/credentials",
         params: { server_id: other_server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -43,7 +43,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   it "filters by server_id inside scoped organization for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/credentials",
+    get "/api/v1/manage/credentials",
         params: { server_id: server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -58,7 +58,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   it "returns access denied for out-of-scope server_id filter for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/credentials",
+    get "/api/v1/manage/credentials",
         params: { server_id: other_server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -68,7 +68,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   end
 
   it "returns server not found for unknown server_id filter" do
-    get "/api/v1/credentials",
+    get "/api/v1/manage/credentials",
         params: { server_id: 9_999_999 },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -78,7 +78,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   end
 
   it "returns parameter-error for invalid server_id filter" do
-    get "/api/v1/credentials",
+    get "/api/v1/manage/credentials",
         params: { server_id: "abc" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -89,7 +89,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   it "returns scoped credentials for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/credentials", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/credentials", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     uuids = json["data"]["credentials"].map { |credential_data| credential_data["uuid"] }
@@ -102,7 +102,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
   it "returns AccessDenied when the credential has no user context" do
     organization.update_column(:owner_id, nil)
 
-    get "/api/v1/credentials", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/credentials", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")

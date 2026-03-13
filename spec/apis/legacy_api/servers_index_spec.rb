@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Servers#index", type: :request do
+RSpec.describe "ManagementAPI::Servers#index", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization, name: "Credential Server") }
   let(:credential) { create(:credential, server: server) }
@@ -17,7 +17,7 @@ RSpec.describe "LegacyAPI::Servers#index", type: :request do
   end
 
   it "returns only servers from the credential organization for admin credentials" do
-    get "/api/v1/servers", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/servers", headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
@@ -32,7 +32,7 @@ RSpec.describe "LegacyAPI::Servers#index", type: :request do
   it "returns only scoped servers for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/servers", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/servers", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     uuids = json["data"]["servers"].map { |server_data| server_data["uuid"] }

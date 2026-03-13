@@ -1,15 +1,15 @@
-# Postal API: Credentials (Legacy v1)
+# Postal API: Management Credentials
 
-This page documents the credential endpoints under `/api/v1/credentials`.
+This page documents the credential endpoints under `/api/v1/manage/credentials`.
 
 ## Endpoints
 
-- `GET /api/v1/credentials`
-- `POST /api/v1/credentials`
-- `GET /api/v1/credentials/:uuid`
-- `PATCH /api/v1/credentials/:uuid`
-- `PUT /api/v1/credentials/:uuid`
-- `DELETE /api/v1/credentials/:uuid`
+- `GET /api/v1/manage/credentials`
+- `POST /api/v1/manage/credentials`
+- `GET /api/v1/manage/credentials/:uuid`
+- `PATCH /api/v1/manage/credentials/:uuid`
+- `PUT /api/v1/manage/credentials/:uuid`
+- `DELETE /api/v1/manage/credentials/:uuid`
 
 ## Authentication and Authorization
 
@@ -52,7 +52,7 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 ---
 
-## `GET /api/v1/credentials`
+## `GET /api/v1/manage/credentials`
 
 Returns credentials visible in the current scope (`Credential` entries attached to visible servers), ordered by `name`.
 
@@ -70,7 +70,7 @@ Success payload:
 
 ---
 
-## `GET /api/v1/credentials/:uuid`
+## `GET /api/v1/manage/credentials/:uuid`
 
 Returns one credential with detailed payload.
 
@@ -92,7 +92,7 @@ If credential is missing or outside scope:
 
 ---
 
-## `POST /api/v1/credentials`
+## `POST /api/v1/manage/credentials`
 
 Creates a credential.
 
@@ -113,7 +113,7 @@ Validation and scope behavior:
 
 ---
 
-## `PATCH/PUT /api/v1/credentials/:uuid`
+## `PATCH/PUT /api/v1/manage/credentials/:uuid`
 
 Updates an existing credential.
 
@@ -129,7 +129,7 @@ Behavior:
 
 ---
 
-## `DELETE /api/v1/credentials/:uuid`
+## `DELETE /api/v1/manage/credentials/:uuid`
 
 Deletes a credential.
 

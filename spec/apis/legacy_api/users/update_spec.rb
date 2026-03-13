@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Users#update", type: :request do
+RSpec.describe "ManagementAPI::Users#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -26,7 +26,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "updates users across organizations for admin credentials" do
-    patch "/api/v1/users/#{foreign_user.uuid}",
+    patch "/api/v1/manage/users/#{foreign_user.uuid}",
           params: { first_name: "Updated" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -40,7 +40,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "allows assigning organizations across scopes for admin credentials" do
-    patch "/api/v1/users/#{target_user.uuid}",
+    patch "/api/v1/manage/users/#{target_user.uuid}",
           params: { organization_ids: [organization.id, other_organization.id] }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -54,7 +54,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   it "denies access for non-admin organization owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    patch "/api/v1/users/#{target_user.uuid}",
+    patch "/api/v1/manage/users/#{target_user.uuid}",
           params: { first_name: "Blocked" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -64,7 +64,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "prevents admin from removing own admin status" do
-    patch "/api/v1/users/#{admin_user.uuid}",
+    patch "/api/v1/manage/users/#{admin_user.uuid}",
           params: { admin: false }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -74,7 +74,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "prevents admin from removing own admin status with string false" do
-    patch "/api/v1/users/#{admin_user.uuid}",
+    patch "/api/v1/manage/users/#{admin_user.uuid}",
           params: { admin: "false" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -87,7 +87,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "updates the password when provided" do
-    patch "/api/v1/users/#{target_user.uuid}",
+    patch "/api/v1/manage/users/#{target_user.uuid}",
           params: { password: "new-password-123", password_confirmation: "new-password-123" }.to_json,
           headers: json_headers_for(credential.key)
 
@@ -99,7 +99,7 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
   end
 
   it "returns parameter-error for invalid updates" do
-    patch "/api/v1/users/#{target_user.uuid}",
+    patch "/api/v1/manage/users/#{target_user.uuid}",
           params: { email_address: "not-an-email" }.to_json,
           headers: json_headers_for(credential.key)
 

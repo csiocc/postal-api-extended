@@ -1,15 +1,15 @@
-# Postal API: Organizations (Legacy v1)
+# Postal API: Management Organizations
 
-This page documents the organization endpoints under `/api/v1/organizations`.
+This page documents the organization endpoints under `/api/v1/manage/organizations`.
 
 ## Endpoints
 
-- `GET /api/v1/organizations`
-- `POST /api/v1/organizations`
-- `GET /api/v1/organizations/:uuid`
-- `PATCH /api/v1/organizations/:uuid`
-- `PUT /api/v1/organizations/:uuid`
-- `DELETE /api/v1/organizations/:uuid`
+- `GET /api/v1/manage/organizations`
+- `POST /api/v1/manage/organizations`
+- `GET /api/v1/manage/organizations/:uuid`
+- `PATCH /api/v1/manage/organizations/:uuid`
+- `PUT /api/v1/manage/organizations/:uuid`
+- `DELETE /api/v1/manage/organizations/:uuid`
 
 ## Authentication and Authorization
 
@@ -56,14 +56,14 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 ---
 
-## `GET /api/v1/organizations`
+## `GET /api/v1/manage/organizations`
 
 Returns all visible non-deleted organizations (`Organization.present`), ordered by `name`.
 
 Example:
 
 ```bash
-curl -X GET http://127.0.0.1:5000/api/v1/organizations \
+curl -X GET http://127.0.0.1:5000/api/v1/manage/organizations \
   -H "X-Server-API-Key: <api_key>"
 ```
 
@@ -91,14 +91,14 @@ Success excerpt:
 
 ---
 
-## `GET /api/v1/organizations/:uuid`
+## `GET /api/v1/manage/organizations/:uuid`
 
 Returns one organization with detailed payload.
 
 Example:
 
 ```bash
-curl -X GET http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
+curl -X GET http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
   -H "X-Server-API-Key: <api_key>"
 ```
 
@@ -121,7 +121,7 @@ If organization is missing:
 
 ---
 
-## `POST /api/v1/organizations`
+## `POST /api/v1/manage/organizations`
 
 Creates an organization.
 
@@ -137,7 +137,7 @@ Creates an organization.
 Example:
 
 ```bash
-curl -X POST http://127.0.0.1:5000/api/v1/organizations \
+curl -X POST http://127.0.0.1:5000/api/v1/manage/organizations \
   -H "X-Server-API-Key: <api_key>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -171,7 +171,7 @@ Malformed JSON body:
 
 ---
 
-## `PATCH/PUT /api/v1/organizations/:uuid`
+## `PATCH/PUT /api/v1/manage/organizations/:uuid`
 
 Updates an existing organization.
 
@@ -182,7 +182,7 @@ Behavior:
 Example:
 
 ```bash
-curl -X PATCH http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
+curl -X PATCH http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
   -H "X-Server-API-Key: <api_key>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -203,14 +203,14 @@ Errors:
 
 ---
 
-## `DELETE /api/v1/organizations/:uuid`
+## `DELETE /api/v1/manage/organizations/:uuid`
 
 Soft-deletes an organization.
 
 Example:
 
 ```bash
-curl -X DELETE http://127.0.0.1:5000/api/v1/organizations/<organization_uuid> \
+curl -X DELETE http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
   -H "X-Server-API-Key: <api_key>"
 ```
 

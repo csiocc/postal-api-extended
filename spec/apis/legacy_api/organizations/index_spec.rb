@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
+RSpec.describe 'ManagementAPI::Organizations#index', type: :request do
   let(:api_user) { create(:user, admin: true) }
   let!(:organization) { create(:organization, owner: api_user) }
   let!(:server) { create(:server, organization: organization) }
@@ -10,7 +10,7 @@ RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
   let!(:other_organization) { create(:organization) }
 
   it 'allows cross-organization listing for admin credentials' do
-    get '/api/v1/organizations', headers: { 'X-Server-API-Key' => credential.key }
+    get '/api/v1/manage/organizations', headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)
     organizations = json.dig('data', 'organizations')
@@ -27,7 +27,7 @@ RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
     scoped_credential = create(:credential, server: scoped_server)
     create(:organization)
 
-    get '/api/v1/organizations', headers: { 'X-Server-API-Key' => scoped_credential.key }
+    get '/api/v1/manage/organizations', headers: { 'X-Server-API-Key' => scoped_credential.key }
 
     json = JSON.parse(response.body)
     organizations = json.dig('data', 'organizations')
@@ -39,7 +39,7 @@ RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
   it "returns AccessDenied when the credential has no user context" do
     organization.update_column(:owner_id, nil)
 
-    get "/api/v1/organizations", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/organizations", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")

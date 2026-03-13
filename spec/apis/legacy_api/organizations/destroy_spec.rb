@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Organizations#destroy', type: :request do
+RSpec.describe 'ManagementAPI::Organizations#destroy', type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -15,7 +15,7 @@ RSpec.describe 'LegacyAPI::Organizations#destroy', type: :request do
   end
 
   it 'allows cross-organization deletion for admin credentials' do
-    delete "/api/v1/organizations/#{other_organization.uuid}",
+    delete "/api/v1/manage/organizations/#{other_organization.uuid}",
            headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)
@@ -26,7 +26,7 @@ RSpec.describe 'LegacyAPI::Organizations#destroy', type: :request do
   it 'denies deletion for non-admin owners' do
     organization.update!(owner: create(:user, admin: false))
 
-    delete "/api/v1/organizations/#{organization.uuid}",
+    delete "/api/v1/manage/organizations/#{organization.uuid}",
            headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)

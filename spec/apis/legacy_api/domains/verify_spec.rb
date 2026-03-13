@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Domains#verify", type: :request do
+RSpec.describe "ManagementAPI::Domains#verify", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -36,7 +36,7 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
   end
 
   it "verifies DNS for domains in scope" do
-    post "/api/v1/domains/#{domain.uuid}/verify",
+    post "/api/v1/manage/domains/#{domain.uuid}/verify",
          params: { force: true }.to_json,
          headers: json_headers_for(credential.key)
 
@@ -47,7 +47,7 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
   end
 
   it "returns parameter-error for invalid force values" do
-    post "/api/v1/domains/#{domain.uuid}/verify",
+    post "/api/v1/manage/domains/#{domain.uuid}/verify",
          params: { force: "maybe" }.to_json,
          headers: json_headers_for(credential.key)
 
@@ -58,7 +58,7 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
   it "does not disclose foreign domains for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    post "/api/v1/domains/#{foreign_domain.uuid}/verify",
+    post "/api/v1/manage/domains/#{foreign_domain.uuid}/verify",
          params: { force: true }.to_json,
          headers: json_headers_for(credential.key)
 
@@ -68,7 +68,7 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
   end
 
   it "does not disclose foreign domains for admin credentials either" do
-    post "/api/v1/domains/#{foreign_domain.uuid}/verify",
+    post "/api/v1/manage/domains/#{foreign_domain.uuid}/verify",
          params: { force: true }.to_json,
          headers: json_headers_for(credential.key)
 
@@ -81,7 +81,7 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
     allow(Rails.logger).to receive(:error)
     allow_any_instance_of(Domain).to receive(:check_dns).and_raise(StandardError, "resolver failed")
 
-    post "/api/v1/domains/#{domain.uuid}/verify",
+    post "/api/v1/manage/domains/#{domain.uuid}/verify",
          params: { force: true }.to_json,
          headers: json_headers_for(credential.key)
 
@@ -90,8 +90,8 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
     expect(json.dig("data", "code")).to eq("DomainVerificationFailed")
     expect(json.dig("data", "message")).to eq("Could not verify DNS records for this domain")
     expect(json.dig("data", "error")).to be_nil
-    expect(Rails.logger).to have_received(:error).with(
-      include("Legacy API domain verification failed"),
-    )
+      expect(Rails.logger).to have_received(:error).with(
+        include("Management API domain verification failed"),
+      )
   end
 end

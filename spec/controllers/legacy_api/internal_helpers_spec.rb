@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe LegacyAPI::CredentialsController, type: :controller do
+RSpec.describe ManagementAPI::CredentialsController, type: :controller do
   describe "#current_organization" do
     it "returns the credential organization helper value" do
       organization = build_stubbed(:organization)
@@ -13,7 +13,7 @@ RSpec.describe LegacyAPI::CredentialsController, type: :controller do
   end
 end
 
-RSpec.describe LegacyAPI::UsersController, type: :controller do
+RSpec.describe ManagementAPI::UsersController, type: :controller do
   describe "#scoped_users" do
     it "returns users from visible organizations for non-admin contexts" do
       current_user = create(:user, admin: false)

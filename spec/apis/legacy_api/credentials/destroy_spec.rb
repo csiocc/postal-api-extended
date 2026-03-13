@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
+RSpec.describe "ManagementAPI::Credentials#destroy", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let!(:credential) { create(:credential, server: server) }
@@ -19,7 +19,7 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
 
   it "does not delete foreign credentials for admin credentials" do
     expect do
-      delete "/api/v1/credentials/#{foreign_credential.uuid}",
+      delete "/api/v1/manage/credentials/#{foreign_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.not_to change(Credential, :count)
 
@@ -33,7 +33,7 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     organization.update!(owner: create(:user, admin: false))
 
     expect do
-      delete "/api/v1/credentials/#{foreign_credential.uuid}",
+      delete "/api/v1/manage/credentials/#{foreign_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.not_to change(Credential, :count)
 
@@ -46,7 +46,7 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     organization.update!(owner: create(:user, admin: false))
 
     expect do
-      delete "/api/v1/credentials/#{target_credential.uuid}",
+      delete "/api/v1/manage/credentials/#{target_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
     end.to change(Credential, :count).by(-1)
 
@@ -55,7 +55,7 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
   end
 
   it "returns error for non-existent credential" do
-    delete "/api/v1/credentials/invalid-uuid",
+    delete "/api/v1/manage/credentials/invalid-uuid",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)

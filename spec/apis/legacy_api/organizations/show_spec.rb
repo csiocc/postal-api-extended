@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Organizations#show', type: :request do
+RSpec.describe 'ManagementAPI::Organizations#show', type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -15,7 +15,7 @@ RSpec.describe 'LegacyAPI::Organizations#show', type: :request do
   end
 
   it 'allows cross-organization reads for admin credentials' do
-    get "/api/v1/organizations/#{other_organization.uuid}",
+    get "/api/v1/manage/organizations/#{other_organization.uuid}",
         headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)
@@ -26,7 +26,7 @@ RSpec.describe 'LegacyAPI::Organizations#show', type: :request do
   it 'returns scoped reads for non-admin owners' do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/organizations/#{organization.uuid}",
+    get "/api/v1/manage/organizations/#{organization.uuid}",
         headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)
@@ -37,7 +37,7 @@ RSpec.describe 'LegacyAPI::Organizations#show', type: :request do
   it 'does not disclose foreign organizations for non-admin owners' do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/organizations/#{other_organization.uuid}",
+    get "/api/v1/manage/organizations/#{other_organization.uuid}",
         headers: { 'X-Server-API-Key' => credential.key }
 
     json = JSON.parse(response.body)

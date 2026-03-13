@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
+RSpec.describe 'ManagementAPI::Organizations#create', type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -37,7 +37,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     )
 
     expect do
-      post '/api/v1/organizations',
+      post '/api/v1/manage/organizations',
            params: admin_params.to_json,
            headers: json_headers_for(credential.key)
     end.to change(Organization, :count).by(1)
@@ -57,7 +57,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
 
   it 'creates an owner membership when the current api user becomes the owner' do
     expect do
-      post '/api/v1/organizations',
+      post '/api/v1/manage/organizations',
            params: valid_params.merge(name: 'self owned org', permalink: 'self-owned-org').to_json,
            headers: json_headers_for(credential.key)
     end.to change(Organization, :count).by(1)
@@ -76,7 +76,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     organization.update!(owner: create(:user, admin: false))
 
     expect do
-      post '/api/v1/organizations',
+      post '/api/v1/manage/organizations',
            params: valid_params.to_json,
            headers: json_headers_for(credential.key)
     end.not_to change(Organization, :count)
@@ -89,7 +89,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
   it 'returns parameter-error for invalid permalink with admin credentials' do
     invalid_params = valid_params.merge(permalink: 'BAD_PERMALINK')
 
-    post '/api/v1/organizations',
+    post '/api/v1/manage/organizations',
          params: invalid_params.to_json,
          headers: json_headers_for(credential.key)
 
@@ -105,7 +105,7 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
     )
 
     expect do
-      post '/api/v1/organizations',
+      post '/api/v1/manage/organizations',
            params: invalid_owner_params.to_json,
            headers: json_headers_for(credential.key)
     end.not_to change(Organization, :count)

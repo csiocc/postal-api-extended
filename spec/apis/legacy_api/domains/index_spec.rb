@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Domains#index", type: :request do
+RSpec.describe "ManagementAPI::Domains#index", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -50,7 +50,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "returns only domains from the credential organization for admin credentials" do
-    get "/api/v1/domains", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     names = json.dig("data", "domains").map { |domain_data| domain_data["name"] }
@@ -63,7 +63,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   it "returns only scoped domains for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/domains", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     names = json.dig("data", "domains").map { |domain_data| domain_data["name"] }
@@ -78,7 +78,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
     organization.update!(owner: non_admin_user)
     OrganizationUser.create!(organization: other_organization, user: non_admin_user, admin: false, all_servers: true)
 
-    get "/api/v1/domains", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     names = json.dig("data", "domains").map { |domain_data| domain_data["name"] }
@@ -88,7 +88,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by scope=organization" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { scope: "organization" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -100,7 +100,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "returns parameter-error for invalid scope filters" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { scope: "team" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -110,7 +110,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by server_id within scope" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { server_id: server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -125,7 +125,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   it "returns access denied for out-of-scope server_id filter for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { server_id: other_server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -135,7 +135,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by organization_id within scope" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { organization_id: organization.id },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -147,7 +147,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by status=pending" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "pending" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -160,7 +160,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by status=pending_dns" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "pending_dns" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -172,7 +172,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by status=verifying" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "verifying" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -182,7 +182,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by status=verified" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "verified" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -194,7 +194,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "filters by status=failed" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "failed" },
         headers: { "X-Server-API-Key" => credential.key }
 
@@ -207,7 +207,7 @@ RSpec.describe "LegacyAPI::Domains#index", type: :request do
   end
 
   it "returns parameter-error for invalid status filter" do
-    get "/api/v1/domains",
+    get "/api/v1/manage/domains",
         params: { status: "unknown" },
         headers: { "X-Server-API-Key" => credential.key }
 

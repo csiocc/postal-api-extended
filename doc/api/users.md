@@ -1,15 +1,15 @@
-# Postal API: Users (Legacy v1)
+# Postal API: Management Users
 
-This page documents the user endpoints under `/api/v1/users`.
+This page documents the user endpoints under `/api/v1/manage/users`.
 
 ## Endpoints
 
-- `GET /api/v1/users`
-- `POST /api/v1/users`
-- `GET /api/v1/users/:uuid`
-- `PATCH /api/v1/users/:uuid`
-- `PUT /api/v1/users/:uuid`
-- `DELETE /api/v1/users/:uuid`
+- `GET /api/v1/manage/users`
+- `POST /api/v1/manage/users`
+- `GET /api/v1/manage/users/:uuid`
+- `PATCH /api/v1/manage/users/:uuid`
+- `PUT /api/v1/manage/users/:uuid`
+- `DELETE /api/v1/manage/users/:uuid`
 
 ## Authentication & Authorization
 
@@ -50,15 +50,15 @@ The API actor is derived from the owner of the credential's server organization.
 
 ## Notes per Endpoint
 
-### `GET /api/v1/users`
+### `GET /api/v1/manage/users`
 
 Lists visible users, ordered by `first_name`, `last_name`.
 
-### `GET /api/v1/users/:uuid`
+### `GET /api/v1/manage/users/:uuid`
 
 Returns one user with details (`organizations`, `email_verified_at`, `oidc`).
 
-### `POST /api/v1/users`
+### `POST /api/v1/manage/users`
 
 Creates a user.
 
@@ -75,14 +75,14 @@ Request fields:
 | `time_zone` | string | no | defaults to `UTC` |
 | `organization_ids` | array[int] | no | must be array of integers |
 
-### `PATCH/PUT /api/v1/users/:uuid`
+### `PATCH/PUT /api/v1/manage/users/:uuid`
 
 Partial update. Password update requires both `password` and `password_confirmation`.
 
 Self-protection:
 - an admin cannot remove their own admin role (`CannotModifySelf`).
 
-### `DELETE /api/v1/users/:uuid`
+### `DELETE /api/v1/manage/users/:uuid`
 
 Deletes a user.
 

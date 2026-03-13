@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "LegacyAPI::Domains#show", type: :request do
+RSpec.describe "ManagementAPI::Domains#show", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
   let(:credential) { create(:credential, server: server) }
@@ -48,7 +48,7 @@ RSpec.describe "LegacyAPI::Domains#show", type: :request do
   end
 
   it "returns domain details inside the credential scope" do
-    get "/api/v1/domains/#{scoped_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{scoped_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
 
@@ -58,7 +58,7 @@ RSpec.describe "LegacyAPI::Domains#show", type: :request do
   end
 
   it "does not disclose foreign domains for admin credentials" do
-    get "/api/v1/domains/#{foreign_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{foreign_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
@@ -68,7 +68,7 @@ RSpec.describe "LegacyAPI::Domains#show", type: :request do
   it "does not disclose foreign domains for non-admin owners" do
     organization.update!(owner: create(:user, admin: false))
 
-    get "/api/v1/domains/#{foreign_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{foreign_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
@@ -76,21 +76,21 @@ RSpec.describe "LegacyAPI::Domains#show", type: :request do
   end
 
   it "returns dkim failure reasons" do
-    get "/api/v1/domains/#{dkim_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{dkim_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json.dig("data", "domain", "status_reason")).to eq("dkim_missing")
   end
 
   it "returns mx failure reasons" do
-    get "/api/v1/domains/#{mx_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{mx_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json.dig("data", "domain", "status_reason")).to eq("mx_invalid")
   end
 
   it "returns return-path failure reasons" do
-    get "/api/v1/domains/#{return_path_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
+    get "/api/v1/manage/domains/#{return_path_failed_domain.uuid}", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json.dig("data", "domain", "status_reason")).to eq("return_path_invalid")
