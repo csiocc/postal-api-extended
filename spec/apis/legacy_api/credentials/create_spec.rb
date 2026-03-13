@@ -29,20 +29,17 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     }
   end
 
-  it "creates a credential on a foreign server for admin credentials" do
+  it "denies creating a credential on a foreign server for admin credentials" do
     expect do
       post "/api/v1/credentials",
            params: valid_params.merge(server_id: other_server.id).to_json,
            headers: json_headers_for(credential.key)
-    end.to change(Credential, :count).by(1)
+    end.not_to change(Credential, :count)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "credential", "name")).to eq("API Credential")
-
-    created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
-    expect(created_credential.server_id).to eq(other_server.id)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
   it "denies creating credentials on foreign servers for non-admin owners" do
@@ -72,6 +69,48 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
 
     created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
     expect(created_credential.server_id).to eq(server.id)
+  end
+
+  it "allows explicitly targeting the current server by server_id" do
+    post "/api/v1/credentials",
+         params: valid_params.merge(server_id: server.id).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+
+    created_credential = Credential.find_by!(uuid: json.dig("data", "credential", "uuid"))
+    expect(created_credential.server_id).to eq(server.id)
+  end
+
+  it "accepts numeric hold values" do
+    post "/api/v1/credentials",
+         params: valid_params.merge(name: "Held Credential", hold: 1).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "credential", "hold")).to eq(true)
+  end
+
+  it "returns parameter-error for invalid server_id" do
+    post "/api/v1/credentials",
+         params: valid_params.merge(server_id: "abc").to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("server_id must be an integer")
+  end
+
+  it "returns ServerNotFound for unknown server_id" do
+    post "/api/v1/credentials",
+         params: valid_params.merge(server_id: 9_999_999).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("ServerNotFound")
   end
 
   it "defaults type to SMTP when no type is provided" do
@@ -108,5 +147,17 @@ RSpec.describe "LegacyAPI::Credentials#create", type: :request do
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")
     expect(json.dig("data", "message")).to eq("Request body must contain valid JSON.")
+  end
+
+  it "returns AccessDenied when the credential has no user context" do
+    organization.update_column(:owner_id, nil)
+
+    post "/api/v1/credentials",
+         params: valid_params.to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 end

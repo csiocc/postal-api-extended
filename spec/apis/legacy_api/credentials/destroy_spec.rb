@@ -17,15 +17,16 @@ RSpec.describe "LegacyAPI::Credentials#destroy", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "deletes credentials across organizations for admin credentials" do
+  it "does not delete foreign credentials for admin credentials" do
     expect do
       delete "/api/v1/credentials/#{foreign_credential.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
-    end.to change(Credential, :count).by(-1)
+    end.not_to change(Credential, :count)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("CredentialNotFound")
   end
 
   it "blocks cross-organization deletion for non-admin owners" do

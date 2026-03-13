@@ -83,7 +83,7 @@ module LegacyAPI
     end
 
     def scoped_servers
-      Server.present.where(organization_id: scoped_organizations_for_current_api_user.select(:id))
+      scoped_servers_for_current_credential
     end
 
     def resolve_organization_for_write
@@ -103,7 +103,7 @@ module LegacyAPI
         return nil
       end
 
-      if scoped_organizations_for_current_api_user.where(id: organization.id).exists?
+      if scoped_organizations_for_current_credential.where(id: organization.id).exists?
         organization
       else
         render_error("AccessDenied",
@@ -132,7 +132,7 @@ module LegacyAPI
     end
 
     def current_organization
-      @current_organization ||= @current_credential.server.organization
+      current_api_organization
     end
 
     def server_hash(server, include_details: false)

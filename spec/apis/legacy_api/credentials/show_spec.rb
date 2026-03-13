@@ -28,13 +28,13 @@ RSpec.describe "LegacyAPI::Credentials#show", type: :request do
     expect(json.dig("data", "credential", "uuid")).to eq(target_credential.uuid)
   end
 
-  it "allows cross-organization credential reads for admin credentials" do
+  it "does not disclose foreign credentials for admin credentials" do
     get "/api/v1/credentials/#{foreign_credential.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "credential", "uuid")).to eq(foreign_credential.uuid)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("CredentialNotFound")
   end
 
   it "does not disclose foreign credentials for non-admin owners" do

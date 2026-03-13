@@ -28,14 +28,15 @@ RSpec.describe "LegacyAPI::Domains#destroy", type: :request do
     expect(json["status"]).to eq("success")
   end
 
-  it "allows deleting foreign domains for admin credentials" do
+  it "does not delete foreign domains for admin credentials" do
     expect do
       delete "/api/v1/domains/#{foreign_domain.uuid}",
              headers: { "X-Server-API-Key" => credential.key }
-    end.to change(Domain, :count).by(-1)
+    end.not_to change(Domain, :count)
 
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("DomainNotFound")
   end
 
   it "does not disclose foreign domains for non-admin owners" do

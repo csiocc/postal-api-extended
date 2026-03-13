@@ -111,6 +111,23 @@ RSpec.describe "Legacy Send API", type: :request do
         end
       end
 
+      context "when the From address is not authorised" do
+        let(:data) do
+          mail = Mail.new
+          mail.to = "test1@example.com"
+          mail.from = "test@another.com"
+          mail.subject = "test"
+          mail.body = "plain text"
+          mail
+        end
+
+        it "returns an error" do
+          parsed_body = JSON.parse(response.body)
+          expect(parsed_body["status"]).to eq "error"
+          expect(parsed_body["data"]["code"]).to eq "UnauthenticatedFromAddress"
+        end
+      end
+
       context "when a valid email is provided" do
         it "returns details of the messages created" do
           parsed_body = JSON.parse(response.body)

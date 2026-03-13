@@ -16,7 +16,7 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "soft deletes a server across organizations for admin credentials" do
+  it "soft deletes a server inside the credential organization" do
     delete "/api/v1/servers/#{target_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
@@ -26,13 +26,14 @@ RSpec.describe "LegacyAPI::Servers#destroy", type: :request do
     expect(target_server.reload.deleted_at).to be_present
   end
 
-  it "soft deletes a foreign server for admin credentials" do
+  it "does not delete foreign servers for admin credentials" do
     delete "/api/v1/servers/#{foreign_server.uuid}",
            headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(foreign_server.reload.deleted_at).to be_present
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("ServerNotFound")
+    expect(foreign_server.reload.deleted_at).to be_nil
   end
 
   it "blocks cross-organization deletion for non-admin owners" do

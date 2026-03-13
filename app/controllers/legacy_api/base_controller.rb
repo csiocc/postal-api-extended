@@ -142,6 +142,20 @@ module LegacyAPI
       @current_api_user ||= @current_credential&.server&.organization&.owner
     end
 
+    # Return the server used to authenticate the current API request.
+    #
+    # @return [Server, nil]
+    def current_api_server
+      @current_api_server ||= @current_credential&.server
+    end
+
+    # Return the organization that issued the credential for this request.
+    #
+    # @return [Organization, nil]
+    def current_api_organization
+      @current_api_organization ||= current_api_server&.organization
+    end
+
     # Return organizations visible to the current API actor.
     #
     # Admin users can see all organizations. Non-admin users can see
@@ -160,6 +174,27 @@ module LegacyAPI
           user_id: current_api_user.id
         )
         .distinct
+    end
+
+    # Return organizations available to the authenticating credential itself.
+    #
+    # Management actions for server-bound resources must stay inside the
+    # credential's own organization, even if the inferred owner can see more.
+    #
+    # @return [ActiveRecord::Relation<Organization>]
+    def scoped_organizations_for_current_credential
+      return Organization.present.none unless current_api_organization
+
+      Organization.present.where(id: current_api_organization.id)
+    end
+
+    # Return servers available to the authenticating credential itself.
+    #
+    # @return [ActiveRecord::Relation<Server>]
+    def scoped_servers_for_current_credential
+      return Server.present.none unless current_api_organization
+
+      Server.present.where(organization_id: current_api_organization.id)
     end
 
   end

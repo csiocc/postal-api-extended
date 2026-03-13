@@ -26,13 +26,13 @@ RSpec.describe "LegacyAPI::Servers#show", type: :request do
     expect(json.dig("data", "server", "uuid")).to eq(server.uuid)
   end
 
-  it "allows cross-organization server reads for admin credentials" do
+  it "does not disclose foreign servers for admin credentials" do
     get "/api/v1/servers/#{foreign_server.uuid}",
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "uuid")).to eq(foreign_server.uuid)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("ServerNotFound")
   end
 
   it "does not disclose foreign servers for non-admin owners" do

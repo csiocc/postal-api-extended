@@ -23,18 +23,18 @@ RSpec.describe "LegacyAPI::Servers#update", type: :request do
     }
   end
 
-  it "updates servers across organizations for admin credentials" do
+  it "blocks cross-organization updates for admin credentials" do
     patch "/api/v1/servers/#{foreign_server.uuid}",
           params: { name: "Updated Server" }.to_json,
           headers: json_headers_for(credential.key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "name")).to eq("Updated Server")
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("ServerNotFound")
 
     foreign_server.reload
-    expect(foreign_server.name).to eq("Updated Server")
+    expect(foreign_server.name).to eq("Foreign Server")
   end
 
   it "blocks cross-organization updates for non-admin owners" do

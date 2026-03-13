@@ -135,11 +135,11 @@ module LegacyAPI
     end
 
     def scoped_organizations
-      scoped_organizations_for_current_api_user
+      scoped_organizations_for_current_credential
     end
 
     def scoped_servers
-      Server.present.where(organization_id: scoped_organizations.select(:id))
+      scoped_servers_for_current_credential
     end
 
     def scoped_domains
@@ -364,11 +364,11 @@ module LegacyAPI
     end
 
     def current_server
-      @current_server ||= @current_credential.server
+      @current_server ||= current_api_server
     end
 
     def current_organization
-      @current_organization ||= current_server.organization
+      @current_organization ||= current_api_organization
     end
 
     def domain_scope(domain)

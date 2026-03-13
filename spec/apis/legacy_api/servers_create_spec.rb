@@ -30,7 +30,7 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     }
   end
 
-  it "creates a server in another organization for admin credentials" do
+  it "denies creating a server outside the credential organization for admin credentials" do
     expect do
       post "/api/v1/servers",
            params: valid_params.merge(
@@ -39,15 +39,12 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
              organization_id: other_organization.id
            ).to_json,
            headers: json_headers_for(credential.key)
-    end.to change(Server, :count).by(1)
+    end.not_to change(Server, :count)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "permalink")).to eq("cross-org-server")
-
-    created_server = Server.find_by!(uuid: json.dig("data", "server", "uuid"))
-    expect(created_server.organization_id).to eq(other_organization.id)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
   it "denies creating a server outside scope for non-admin owners" do
@@ -83,6 +80,38 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     expect(created_server.organization_id).to eq(organization.id)
   end
 
+  it "defaults to the credential organization when organization_id is omitted" do
+    post "/api/v1/servers",
+         params: valid_params.except(:organization_id).merge(permalink: "default-org-server").to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+
+    created_server = Server.find_by!(uuid: json.dig("data", "server", "uuid"))
+    expect(created_server.organization_id).to eq(organization.id)
+  end
+
+  it "returns parameter-error for invalid organization_id" do
+    post "/api/v1/servers",
+         params: valid_params.merge(organization_id: "abc").to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("organization_id must be an integer")
+  end
+
+  it "returns OrganizationNotFound for unknown organization_id" do
+    post "/api/v1/servers",
+         params: valid_params.merge(organization_id: 9_999_999).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("OrganizationNotFound")
+  end
+
   it "returns parameter-error for invalid mode" do
     invalid_params = valid_params.merge(mode: "BrokenMode")
 
@@ -103,5 +132,17 @@ RSpec.describe "LegacyAPI::Servers#create", type: :request do
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")
     expect(json.dig("data", "message")).to eq("Request body must contain valid JSON.")
+  end
+
+  it "returns AccessDenied when the credential has no user context" do
+    organization.update_column(:owner_id, nil)
+
+    post "/api/v1/servers",
+         params: valid_params.to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 end

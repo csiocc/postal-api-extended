@@ -97,7 +97,7 @@ module LegacyAPI
     end
 
     def scoped_servers
-      Server.present.where(organization_id: scoped_organizations_for_current_api_user.select(:id))
+      scoped_servers_for_current_credential
     end
 
     def resolve_server_for_write
@@ -205,11 +205,11 @@ module LegacyAPI
     end
 
     def current_server
-      @current_credential.server
+      current_api_server
     end
 
     def current_organization
-      @current_organization ||= current_server.organization
+      current_api_organization
     end
 
     def credential_hash(credential, include_details: false)

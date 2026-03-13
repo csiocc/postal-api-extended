@@ -17,7 +17,7 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "returns credentials across organizations for admin credentials" do
+  it "returns only credentials from the credential organization for admin credentials" do
     get "/api/v1/credentials", headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
@@ -26,21 +26,18 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
 
     expect(json["status"]).to eq("success")
     expect(uuids).to include(credential.uuid, scoped_credential.uuid)
-    expect(uuids).to include(other_org_credential.uuid)
+    expect(uuids).not_to include(other_org_credential.uuid)
     expect(json.dig("data", "total")).to eq(uuids.size)
   end
 
-  it "filters by server_id for admin credentials across organizations" do
+  it "returns access denied for foreign server_id filters even for admin credentials" do
     get "/api/v1/credentials",
         params: { server_id: other_server.id },
         headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
-    uuids = json["data"]["credentials"].map { |credential_data| credential_data["uuid"] }
-
-    expect(json["status"]).to eq("success")
-    expect(uuids).to eq([other_org_credential.uuid])
-    expect(json.dig("data", "total")).to eq(1)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 
   it "filters by server_id inside scoped organization for non-admin owners" do
@@ -100,5 +97,15 @@ RSpec.describe "LegacyAPI::Credentials#index", type: :request do
     expect(json["status"]).to eq("success")
     expect(uuids).to include(credential.uuid, scoped_credential.uuid)
     expect(uuids).not_to include(other_org_credential.uuid)
+  end
+
+  it "returns AccessDenied when the credential has no user context" do
+    organization.update_column(:owner_id, nil)
+
+    get "/api/v1/credentials", headers: { "X-Server-API-Key" => credential.key }
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
   end
 end

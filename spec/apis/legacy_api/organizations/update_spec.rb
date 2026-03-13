@@ -57,4 +57,14 @@ RSpec.describe 'LegacyAPI::Organizations#update', type: :request do
     expect(json['status']).to eq('error')
     expect(json.dig('data', 'code')).to eq('OrganizationNotFound')
   end
+
+  it "returns parameter-error when the update is invalid" do
+    patch "/api/v1/organizations/#{organization.uuid}",
+          params: { name: "" }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to include("Name can't be blank").or include("name can't be blank")
+  end
 end

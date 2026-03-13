@@ -67,6 +67,16 @@ RSpec.describe "LegacyAPI::Domains#verify", type: :request do
     expect(json.dig("data", "code")).to eq("DomainNotFound")
   end
 
+  it "does not disclose foreign domains for admin credentials either" do
+    post "/api/v1/domains/#{foreign_domain.uuid}/verify",
+         params: { force: true }.to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("DomainNotFound")
+  end
+
   it "returns DomainVerificationFailed when verification raises" do
     allow(Rails.logger).to receive(:error)
     allow_any_instance_of(Domain).to receive(:check_dns).and_raise(StandardError, "resolver failed")

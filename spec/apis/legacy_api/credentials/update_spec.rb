@@ -24,20 +24,19 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
     }
   end
 
-  it "updates credentials across organizations for admin credentials" do
+  it "blocks cross-organization updates for admin credentials" do
     patch "/api/v1/credentials/#{foreign_credential.uuid}",
           params: { name: "Updated Credential", hold: true }.to_json,
           headers: json_headers_for(credential.key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "credential", "name")).to eq("Updated Credential")
-    expect(json.dig("data", "credential", "hold")).to eq(true)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("CredentialNotFound")
 
     foreign_credential.reload
-    expect(foreign_credential.name).to eq("Updated Credential")
-    expect(foreign_credential.hold).to eq(true)
+    expect(foreign_credential.name).to eq("Foreign Credential")
+    expect(foreign_credential.hold).not_to eq(true)
   end
 
   it "blocks cross-organization updates for non-admin owners" do
@@ -69,9 +68,29 @@ RSpec.describe "LegacyAPI::Credentials#update", type: :request do
     expect(target_credential.hold).to eq(true)
   end
 
+  it "accepts numeric hold values on update" do
+    patch "/api/v1/credentials/#{target_credential.uuid}",
+          params: { hold: 0 }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "credential", "hold")).to eq(false)
+  end
+
+  it "returns parameter-error when changing the key is not allowed" do
+    patch "/api/v1/credentials/#{target_credential.uuid}",
+          params: { key: "new-key-value" }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to include("Key cannot be changed").or include("key cannot be changed")
+  end
+
   it "returns parameter-error for invalid hold value" do
     patch "/api/v1/credentials/#{target_credential.uuid}",
-          params: { hold: "not-a-boolean" }.to_json,
+         params: { hold: "not-a-boolean" }.to_json,
           headers: json_headers_for(credential.key)
 
     json = JSON.parse(response.body)

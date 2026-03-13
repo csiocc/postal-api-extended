@@ -35,4 +35,14 @@ RSpec.describe 'LegacyAPI::Organizations#index', type: :request do
     expect(json['status']).to eq('success')
     expect(organizations.map { |org| org['uuid'] }).to contain_exactly(scoped_organization.uuid)
   end
+
+  it "returns AccessDenied when the credential has no user context" do
+    organization.update_column(:owner_id, nil)
+
+    get "/api/v1/organizations", headers: { "X-Server-API-Key" => credential.key }
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json.dig("data", "code")).to eq("AccessDenied")
+  end
 end

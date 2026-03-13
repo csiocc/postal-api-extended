@@ -83,6 +83,46 @@ RSpec.describe 'LegacyAPI::Users#create', type: :request do
     expect(json['status']).to eq('parameter-error')
   end
 
+  it "returns parameter-error for invalid admin values" do
+    post "/api/v1/users",
+         params: valid_params.merge(admin: "maybe").to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("admin must be a boolean")
+  end
+
+  it "accepts numeric admin values" do
+    post "/api/v1/users",
+         params: valid_params.merge(email_address: "admin-#{SecureRandom.hex(4)}@test.com", admin: 1).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "user", "admin")).to eq(true)
+  end
+
+  it "returns parameter-error when organization_ids is not an array" do
+    post "/api/v1/users",
+         params: valid_params.merge(organization_ids: organization.id).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("organization_ids must be an array of organization IDs")
+  end
+
+  it "returns parameter-error when organization_ids contains non-integers" do
+    post "/api/v1/users",
+         params: valid_params.merge(organization_ids: [organization.id, "abc"]).to_json,
+         headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("organization_ids must contain only integer IDs")
+  end
+
   it 'returns parameter-error for malformed JSON payloads' do
     post '/api/v1/users',
          params: '{"email_address":"broken-json"',

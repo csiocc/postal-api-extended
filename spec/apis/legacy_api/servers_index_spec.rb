@@ -16,7 +16,7 @@ RSpec.describe "LegacyAPI::Servers#index", type: :request do
     organization.update!(owner: admin_user)
   end
 
-  it "returns servers across organizations for admin credentials" do
+  it "returns only servers from the credential organization for admin credentials" do
     get "/api/v1/servers", headers: { "X-Server-API-Key" => credential.key }
 
     expect(response).to have_http_status(200)
@@ -25,7 +25,7 @@ RSpec.describe "LegacyAPI::Servers#index", type: :request do
 
     expect(json["status"]).to eq("success")
     expect(uuids).to include(server.uuid, scoped_server.uuid)
-    expect(uuids).to include(other_org_server.uuid)
+    expect(uuids).not_to include(other_org_server.uuid)
     expect(json.dig("data", "total")).to eq(uuids.size)
   end
 

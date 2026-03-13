@@ -85,4 +85,25 @@ RSpec.describe "LegacyAPI::Users#update", type: :request do
     admin_user.reload
     expect(admin_user.admin).to be(true)
   end
+
+  it "updates the password when provided" do
+    patch "/api/v1/users/#{target_user.uuid}",
+          params: { password: "new-password-123", password_confirmation: "new-password-123" }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("success")
+
+    target_user.reload
+    expect(target_user.authenticate("new-password-123")).to eq(target_user)
+  end
+
+  it "returns parameter-error for invalid updates" do
+    patch "/api/v1/users/#{target_user.uuid}",
+          params: { email_address: "not-an-email" }.to_json,
+          headers: json_headers_for(credential.key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+  end
 end
