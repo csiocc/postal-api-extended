@@ -104,10 +104,10 @@ module LegacyAPI
 
       render_success(domain: domain_hash(domain, include_details: true))
     rescue StandardError => e
+      log_domain_verification_failure(domain, e)
       render_error(
         "DomainVerificationFailed",
-        message: "Could not verify DNS records for this domain",
-        error: e.message
+        message: "Could not verify DNS records for this domain"
       )
     end
 
@@ -303,6 +303,13 @@ module LegacyAPI
       return domains.none if performed?
 
       domains.where(owner_type: "Organization", owner_id: organization.id)
+    end
+
+    def log_domain_verification_failure(domain, error)
+      Rails.logger.error(
+        "Legacy API domain verification failed for domain=#{domain&.uuid || params[:uuid]} " \
+        "server=#{@current_credential&.server&.uuid} error_class=#{error.class} error=#{error.message}"
+      )
     end
 
     def create_attributes
