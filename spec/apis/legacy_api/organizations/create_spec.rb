@@ -48,6 +48,28 @@ RSpec.describe 'LegacyAPI::Organizations#create', type: :request do
 
     created_organization = Organization.find_by!(uuid: json.dig('data', 'organization', 'uuid'))
     expect(created_organization.owner_id).to eq(other_owner.id)
+    expect(created_organization.organization_users.find_by(user: other_owner)).to have_attributes(
+      admin: true,
+      all_servers: true
+    )
+    expect(other_owner.organizations_scope).to include(created_organization)
+  end
+
+  it 'creates an owner membership when the current api user becomes the owner' do
+    expect do
+      post '/api/v1/organizations',
+           params: valid_params.merge(name: 'self owned org', permalink: 'self-owned-org').to_json,
+           headers: json_headers_for(credential.key)
+    end.to change(Organization, :count).by(1)
+
+    json = JSON.parse(response.body)
+    created_organization = Organization.find_by!(uuid: json.dig('data', 'organization', 'uuid'))
+
+    expect(created_organization.owner_id).to eq(admin_user.id)
+    expect(created_organization.organization_users.find_by(user: admin_user)).to have_attributes(
+      admin: true,
+      all_servers: true
+    )
   end
 
   it 'denies organization creation for non-admin owners' do

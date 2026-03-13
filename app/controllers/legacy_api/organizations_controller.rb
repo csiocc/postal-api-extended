@@ -24,21 +24,27 @@ module LegacyAPI
       owner = resolve_owner(params)
       return unless owner
 
-      organization = Organization.new(
-        name: params["name"],
-        permalink: params["permalink"],
-        time_zone: params["time_zone"] || "UTC",
-        owner: owner
-      )
+      organization = nil
 
-      if organization.save
+      Organization.transaction do
+        organization = Organization.create!(
+          name: params["name"],
+          permalink: params["permalink"],
+          time_zone: params["time_zone"] || "UTC",
+          owner: owner
+        )
+
+        ensure_owner_membership!(organization, owner)
+      end
+
+      if organization
         render_success(
           organization: organization_hash(organization, include_details: true),
           message: "Organization #{organization.name} created successfully"
         )
-      else
-        render_parameter_error(organization.errors.full_messages.join(", "))
       end
+    rescue ActiveRecord::RecordInvalid => e
+      render_parameter_error(e.record.errors.full_messages.join(", "))
     end
 
     def update
@@ -130,6 +136,12 @@ module LegacyAPI
       end
 
       owner
+    end
+
+    def ensure_owner_membership!(organization, owner)
+      membership = organization.organization_users.find_or_initialize_by(user: owner)
+      membership.assign_attributes(admin: true, all_servers: true)
+      membership.save!
     end
 
     def scoped_organizations
