@@ -4,10 +4,8 @@ require 'rails_helper'
 
 RSpec.describe 'ManagementAPI::Organizations#show', type: :request do
   let(:organization) { create(:organization) }
-  let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
   let(:other_organization) { create(:organization) }
 
   before do
@@ -16,29 +14,25 @@ RSpec.describe 'ManagementAPI::Organizations#show', type: :request do
 
   it 'allows cross-organization reads for admin credentials' do
     get "/api/v1/manage/organizations/#{other_organization.uuid}",
-        headers: { 'X-Server-API-Key' => credential.key }
+        headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json['status']).to eq('success')
     expect(json.dig('data', 'organization', 'uuid')).to eq(other_organization.uuid)
   end
 
-  it 'returns scoped reads for non-admin owners' do
-    organization.update!(owner: create(:user, admin: false))
-
+  it 'returns organization details for the owned organization' do
     get "/api/v1/manage/organizations/#{organization.uuid}",
-        headers: { 'X-Server-API-Key' => credential.key }
+        headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json['status']).to eq('success')
     expect(json.dig('data', 'organization', 'uuid')).to eq(organization.uuid)
   end
 
-  it 'does not disclose foreign organizations for non-admin owners' do
-    organization.update!(owner: create(:user, admin: false))
-
-    get "/api/v1/manage/organizations/#{other_organization.uuid}",
-        headers: { 'X-Server-API-Key' => credential.key }
+  it 'returns not found for unknown organizations' do
+    get "/api/v1/manage/organizations/invalid-uuid",
+        headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json['status']).to eq('error')

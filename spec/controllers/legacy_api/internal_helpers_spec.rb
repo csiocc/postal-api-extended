@@ -2,28 +2,19 @@
 
 require "rails_helper"
 
-RSpec.describe ManagementAPI::CredentialsController, type: :controller do
-  describe "#current_organization" do
-    it "returns the credential organization helper value" do
-      organization = build_stubbed(:organization)
-      allow(controller).to receive(:current_api_organization).and_return(organization)
-
-      expect(controller.send(:current_organization)).to eq(organization)
-    end
-  end
-end
-
 RSpec.describe ManagementAPI::UsersController, type: :controller do
   describe "#scoped_users" do
     it "returns users from visible organizations for non-admin contexts" do
-      current_user = create(:user, admin: false)
+      current_user = create(:user)
       organization = create(:organization, owner: create(:user))
       member_user = create(:user)
       outsider = create(:user)
       member_user.organizations << organization
 
       allow(controller).to receive(:current_api_user).and_return(current_user)
-      allow(controller).to receive(:scoped_organizations_for_current_api_user).and_return(Organization.where(id: organization.id))
+      allow(controller).to receive(:scoped_organizations_for_current_api_user).and_return(
+        Organization.where(id: organization.id)
+      )
 
       result = controller.send(:scoped_users)
 
@@ -33,7 +24,7 @@ RSpec.describe ManagementAPI::UsersController, type: :controller do
   end
 
   describe "#authorized_organization_ids" do
-    let(:current_user) { create(:user, admin: false) }
+    let(:current_user) { create(:user) }
     let!(:allowed_organization) { create(:organization) }
     let!(:forbidden_organization) { create(:organization) }
 

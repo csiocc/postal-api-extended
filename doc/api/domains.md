@@ -14,17 +14,14 @@ This page documents domain endpoints under `/api/v1/manage/domains`.
 
 ## Authentication and Authorization
 
-Every request needs a server API key in the header:
+Every request needs a management API key in the header:
 
 ```http
-X-Server-API-Key: <api_key>
+X-Management-API-Key: <management_api_key>
 ```
 
-The API actor is the owner of the credential's server organization.
-
-Scope rules:
-- admin actor (`admin=true`): all organizations
-- non-admin actor: organizations they own or are assigned to
+Management keys are bound to admin users and have global management scope.
+Requests with only `X-Server-API-Key` are rejected.
 
 ## Response Format
 
@@ -41,9 +38,9 @@ Scope rules:
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth or out-of-scope target |
-| `InvalidServerAPIKey` | API key does not exist |
-| `ServerSuspended` | Credential belongs to a suspended server |
+| `AccessDenied` | Missing auth or wrong header type |
+| `InvalidManagementAPIKey` | API key does not exist |
+| `ManagementAPIKeyRevoked` | API key has been revoked |
 | `DomainNotFound` | UUID is missing or outside current visibility scope |
 | `ServerNotFound` | Provided `server_id` does not exist |
 | `OrganizationNotFound` | Provided `organization_id` does not exist |
@@ -124,9 +121,8 @@ Creates a domain.
 
 Rules:
 - `server_id` and `organization_id` are mutually exclusive.
-- if neither is provided, target defaults to current credential server.
+- if neither is provided, the request fails with `server_id or organization_id must be provided`.
 - verification method is fixed to `DNS` on create.
-- out-of-scope targets return `AccessDenied`.
 
 ---
 

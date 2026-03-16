@@ -4,10 +4,8 @@ require "rails_helper"
 
 RSpec.describe "ManagementAPI::Users#index", type: :request do
   let(:organization) { create(:organization) }
-  let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
   let(:scoped_user) { create(:user, admin: false) }
   let(:other_organization) { create(:organization) }
   let(:other_org_user) { create(:user, admin: false) }
@@ -18,8 +16,8 @@ RSpec.describe "ManagementAPI::Users#index", type: :request do
     other_org_user.organizations << other_organization
   end
 
-  it "returns users across organizations for admin credentials" do
-    get "/api/v1/manage/users", headers: { "X-Server-API-Key" => credential.key }
+  it "returns users across organizations for admin management keys" do
+    get "/api/v1/manage/users", headers: management_api_headers(management_api_key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
@@ -30,13 +28,24 @@ RSpec.describe "ManagementAPI::Users#index", type: :request do
     expect(json["data"]["total"]).to eq(uuids.size)
   end
 
-  it "denies access to non-admin owners" do
-    organization.update!(owner: create(:user, admin: false))
+  it "rejects server API keys on management routes" do
+    server = create(:server, organization: organization)
+    credential = create(:credential, server: server)
 
     get "/api/v1/manage/users", headers: { "X-Server-API-Key" => credential.key }
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
     expect(json["data"]["code"]).to eq("AccessDenied")
+  end
+
+  it "rejects revoked management API keys" do
+    management_api_key.revoke!
+
+    get "/api/v1/manage/users", headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("error")
+    expect(json["data"]["code"]).to eq("ManagementAPIKeyRevoked")
   end
 end

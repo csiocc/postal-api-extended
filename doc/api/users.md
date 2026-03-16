@@ -13,17 +13,14 @@ This page documents the user endpoints under `/api/v1/manage/users`.
 
 ## Authentication & Authorization
 
-Every request needs a server API key:
+Every request needs a management API key:
 
 ```http
-X-Server-API-Key: <api_key>
+X-Management-API-Key: <management_api_key>
 ```
 
-User management is **admin-only**.  
-The API actor is derived from the owner of the credential's server organization.
-
-- If that owner has `admin=true`: full user management scope across organizations.
-- If not: request is rejected with `AccessDenied`.
+Management keys are bound to admin users, so user management stays admin-only.
+Requests with only `X-Server-API-Key` are rejected.
 
 ## Response Format
 
@@ -40,9 +37,9 @@ The API actor is derived from the owner of the credential's server organization.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth or non-admin actor |
-| `InvalidServerAPIKey` | API key does not exist |
-| `ServerSuspended` | Credential belongs to a suspended server |
+| `AccessDenied` | Missing auth or wrong header type |
+| `InvalidManagementAPIKey` | API key does not exist |
+| `ManagementAPIKeyRevoked` | API key has been revoked |
 | `UserNotFound` | UUID not found in visible scope |
 | `CannotModifySelf` | Attempt to remove own admin role or delete own account |
 

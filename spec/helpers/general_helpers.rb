@@ -2,6 +2,10 @@
 
 module GeneralHelpers
 
+  def management_api_headers(management_api_key, extra_headers = {})
+    { "X-Management-API-Key" => management_api_key.key }.merge(extra_headers)
+  end
+
   def create_plain_text_message(server, text, to = "test@example.com", override_attributes = {})
     domain = create(:domain, owner: server)
     attributes = { from: "test@#{domain.name}", subject: "Test Plain Text Message" }.merge(override_attributes)

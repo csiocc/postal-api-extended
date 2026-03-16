@@ -13,21 +13,14 @@ This page documents the organization endpoints under `/api/v1/manage/organizatio
 
 ## Authentication and Authorization
 
-Every request needs a server API key in the header:
+Every request needs a management API key in the header:
 
 ```http
-X-Server-API-Key: <api_key>
+X-Management-API-Key: <management_api_key>
 ```
 
-The API actor is the owner of the credential's server organization.
-
-Permissions match the web behavior:
-- `GET /index`, `GET /show`, `PATCH/PUT /update`: allowed for visible organizations
-- `POST /create`, `DELETE /destroy`: admin-only
-
-Scope rules:
-- admin actor (`admin=true`): all organizations
-- non-admin actor: organizations they own or are assigned to
+Management keys are bound to admin users and have global management scope.
+Requests with only `X-Server-API-Key` are rejected.
 
 ## Response Format
 
@@ -46,9 +39,9 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing/invalid auth or missing admin privileges for write operations |
-| `InvalidServerAPIKey` | API key does not exist |
-| `ServerSuspended` | Credential belongs to a suspended server |
+| `AccessDenied` | Missing/invalid auth or wrong header type |
+| `InvalidManagementAPIKey` | API key does not exist |
+| `ManagementAPIKeyRevoked` | API key has been revoked |
 | `OrganizationNotFound` | UUID is missing or not found (including soft-deleted organizations) |
 | `UserNotFound` | Provided `owner_uuid` does not exist |
 
@@ -64,7 +57,7 @@ Example:
 
 ```bash
 curl -X GET http://127.0.0.1:5000/api/v1/manage/organizations \
-  -H "X-Server-API-Key: <api_key>"
+  -H "X-Management-API-Key: <management_api_key>"
 ```
 
 Success excerpt:
@@ -99,7 +92,7 @@ Example:
 
 ```bash
 curl -X GET http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <api_key>"
+  -H "X-Management-API-Key: <management_api_key>"
 ```
 
 Response includes:
@@ -138,7 +131,7 @@ Example:
 
 ```bash
 curl -X POST http://127.0.0.1:5000/api/v1/manage/organizations \
-  -H "X-Server-API-Key: <api_key>" \
+  -H "X-Management-API-Key: <management_api_key>" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Created Organization",
@@ -154,7 +147,6 @@ Success:
 - message `Organization <name> created successfully`
 
 Validation and business errors:
-- non-admin actor -> `error` (`AccessDenied`)
 - invalid permalink format/reserved/duplicate -> `parameter-error`
 - unknown `owner_uuid` -> `error` (`UserNotFound`)
 
@@ -183,7 +175,7 @@ Example:
 
 ```bash
 curl -X PATCH http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <api_key>" \
+  -H "X-Management-API-Key: <management_api_key>" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Global Updated Org",
@@ -211,7 +203,7 @@ Example:
 
 ```bash
 curl -X DELETE http://127.0.0.1:5000/api/v1/manage/organizations/<organization_uuid> \
-  -H "X-Server-API-Key: <api_key>"
+  -H "X-Management-API-Key: <management_api_key>"
 ```
 
 Success:
@@ -219,7 +211,6 @@ Success:
 - message `Organization <name> has been deleted`
 
 Errors:
-- non-admin actor -> `AccessDenied`
 - unknown UUID -> `OrganizationNotFound`
 
 ---

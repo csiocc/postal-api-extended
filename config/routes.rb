@@ -108,7 +108,9 @@ Rails.application.routes.draw do
   end
 
   resources :organizations, except: [:index]
-  resources :users
+  resources :users do
+    resources :management_api_keys, only: [:create, :destroy]
+  end
   resources :ip_pools do
     resources :ip_addresses
   end

@@ -2,7 +2,6 @@
 
 module ManagementAPI
   class UsersController < BaseController
-    skip_before_action :authenticate_as_server
     before_action :authenticate_as_admin
 
     def index
@@ -123,14 +122,9 @@ module ManagementAPI
     private
 
     def authenticate_as_admin
-      authenticate_as_server
-      return if performed?
+      return if current_api_user&.admin?
 
-      if current_api_user&.admin?
-        @current_api_user = current_api_user
-      else
-        render_error('AccessDenied', message: 'User management requires admin privileges')
-      end
+      render_error('AccessDenied', message: 'User management requires admin privileges')
     end
 
     def find_user

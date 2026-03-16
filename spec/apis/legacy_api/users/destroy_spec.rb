@@ -4,10 +4,8 @@ require "rails_helper"
 
 RSpec.describe "ManagementAPI::Users#destroy", type: :request do
   let(:organization) { create(:organization) }
-  let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
   let(:target_user) { create(:user) }
   let(:other_organization) { create(:organization) }
   let(:foreign_user) { create(:user) }
@@ -21,7 +19,7 @@ RSpec.describe "ManagementAPI::Users#destroy", type: :request do
   it "deletes users across organizations for admin credentials" do
     expect do
       delete "/api/v1/manage/users/#{foreign_user.uuid}",
-             headers: { "X-Server-API-Key" => credential.key }
+             headers: management_api_headers(management_api_key)
     end.to change(User, :count).by(-1)
 
     expect(response).to have_http_status(200)
@@ -31,27 +29,26 @@ RSpec.describe "ManagementAPI::Users#destroy", type: :request do
 
   it "prevents self-deletion" do
     delete "/api/v1/manage/users/#{admin_user.uuid}",
-           headers: { "X-Server-API-Key" => credential.key }
+           headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
     expect(json["data"]["code"]).to eq("CannotModifySelf")
   end
 
-  it "denies access for non-admin organization owners" do
-    organization.update!(owner: create(:user, admin: false))
-
+  it "rejects revoked management API keys" do
+    management_api_key.revoke!
     delete "/api/v1/manage/users/#{target_user.uuid}",
-           headers: { "X-Server-API-Key" => credential.key }
+           headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
-    expect(json["data"]["code"]).to eq("AccessDenied")
+    expect(json["data"]["code"]).to eq("ManagementAPIKeyRevoked")
   end
 
   it "returns error for non-existent user" do
     delete "/api/v1/manage/users/invalid-uuid",
-           headers: { "X-Server-API-Key" => credential.key }
+           headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")

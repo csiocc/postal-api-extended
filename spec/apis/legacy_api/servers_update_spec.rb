@@ -5,9 +5,8 @@ require "rails_helper"
 RSpec.describe "ManagementAPI::Servers#update", type: :request do
   let(:organization) { create(:organization) }
   let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
   let(:target_server) { create(:server, organization: organization, name: "Original Server") }
   let(:other_organization) { create(:organization) }
   let(:foreign_server) { create(:server, organization: other_organization, name: "Foreign Server") }
@@ -18,56 +17,38 @@ RSpec.describe "ManagementAPI::Servers#update", type: :request do
 
   def json_headers_for(api_key)
     {
-      "X-Server-API-Key" => api_key,
+      "X-Management-API-Key" => api_key,
       "Content-Type" => "application/json"
     }
   end
 
-  it "blocks cross-organization updates for admin credentials" do
+  it "allows cross-organization updates for management API keys" do
     patch "/api/v1/manage/servers/#{foreign_server.uuid}",
           params: { name: "Updated Server" }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json.dig("data", "code")).to eq("ServerNotFound")
+    expect(json["status"]).to eq("success")
 
     foreign_server.reload
-    expect(foreign_server.name).to eq("Foreign Server")
+    expect(foreign_server.name).to eq("Updated Server")
   end
 
-  it "blocks cross-organization updates for non-admin owners" do
-    organization.update!(owner: create(:user, admin: false))
-
+  it "updates the current organization server too" do
     patch "/api/v1/manage/servers/#{foreign_server.uuid}",
           params: { name: "Blocked Update" }.to_json,
-          headers: json_headers_for(credential.key)
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json.dig("data", "code")).to eq("ServerNotFound")
-  end
-
-  it "allows own-scope updates for non-admin owners" do
-    organization.update!(owner: create(:user, admin: false))
-
-    patch "/api/v1/manage/servers/#{target_server.uuid}",
-          params: { name: "Scoped Updated" }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
-    expect(json.dig("data", "server", "name")).to eq("Scoped Updated")
-
-    target_server.reload
-    expect(target_server.name).to eq("Scoped Updated")
+    expect(json.dig("data", "server", "name")).to eq("Blocked Update")
   end
 
   it "returns parameter-error for invalid mode" do
     patch "/api/v1/manage/servers/#{target_server.uuid}",
           params: { mode: "InvalidMode" }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")

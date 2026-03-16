@@ -2,9 +2,6 @@
 
 module ManagementAPI
   class ServersController < BaseController
-    skip_before_action :authenticate_as_server
-    before_action :authenticate_as_user
-
     def index
       servers = scoped_servers.order(:name).includes(:organization)
       render_success(
@@ -63,15 +60,6 @@ module ManagementAPI
 
     private
 
-    def authenticate_as_user
-      authenticate_as_server
-      return if performed?
-
-      return if current_api_user
-
-      render_error("AccessDenied", message: "Server management requires a valid user context")
-    end
-
     def find_server
       server = scoped_servers.find_by(uuid: params[:uuid])
       return server if server
@@ -83,12 +71,15 @@ module ManagementAPI
     end
 
     def scoped_servers
-      scoped_servers_for_current_credential
+      Server.present.where(organization_id: scoped_organizations_for_current_api_user.select(:id))
     end
 
     def resolve_organization_for_write
       organization_id = api_params["organization_id"]
-      return current_organization if organization_id.blank?
+      if organization_id.blank?
+        render_parameter_error("organization_id is required")
+        return nil
+      end
 
       unless organization_id.to_s.match?(/\A\d+\z/)
         render_parameter_error("organization_id must be an integer")
@@ -103,7 +94,7 @@ module ManagementAPI
         return nil
       end
 
-      if scoped_organizations_for_current_credential.where(id: organization.id).exists?
+      if scoped_organizations_for_current_api_user.where(id: organization.id).exists?
         organization
       else
         render_error("AccessDenied",
@@ -129,10 +120,6 @@ module ManagementAPI
         permalink: params["permalink"],
         mode: params["mode"]
       }.compact
-    end
-
-    def current_organization
-      current_api_organization
     end
 
     def server_hash(server, include_details: false)

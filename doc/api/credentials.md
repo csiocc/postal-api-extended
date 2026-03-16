@@ -13,17 +13,14 @@ This page documents the credential endpoints under `/api/v1/manage/credentials`.
 
 ## Authentication and Authorization
 
-Every request needs a server API key in the header:
+Every request needs a management API key in the header:
 
 ```http
-X-Server-API-Key: <api_key>
+X-Management-API-Key: <management_api_key>
 ```
 
-The API actor is the owner of the credential's server organization.
-
-Scope rules:
-- admin actor (`admin=true`): all organizations
-- non-admin actor: organizations they own or are assigned to
+Management keys are bound to admin users and have global management scope.
+Requests with only `X-Server-API-Key` are rejected.
 
 ## Response Format
 
@@ -42,9 +39,9 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth or out-of-scope write target |
-| `InvalidServerAPIKey` | API key does not exist |
-| `ServerSuspended` | Credential belongs to a suspended server |
+| `AccessDenied` | Missing auth or wrong header type |
+| `InvalidManagementAPIKey` | API key does not exist |
+| `ManagementAPIKeyRevoked` | API key has been revoked |
 | `CredentialNotFound` | UUID is missing or outside current visibility scope |
 | `ServerNotFound` | Provided `server_id` does not exist |
 
@@ -58,9 +55,6 @@ Returns credentials visible in the current scope (`Credential` entries attached 
 
 Optional query params:
 - `server_id` (integer): limits results to credentials of that server
-  - admin actor can filter by any visible server
-  - scoped actor can filter only visible servers in their scope
-  - out-of-scope `server_id` returns `AccessDenied`
   - unknown `server_id` returns `ServerNotFound`
   - non-integer `server_id` returns `parameter-error`
 
@@ -104,10 +98,11 @@ Creates a credential.
 | `name` | string | yes | |
 | `key` | string | no | generated automatically for non-`SMTP-IP` credentials |
 | `hold` | boolean | no | accepts `true/false`, `1/0`, `"true"/"false"` |
-| `server_id` | integer | no | defaults to current credential server |
+| `server_id` | integer | yes | target server for the new credential |
 
 Validation and scope behavior:
-- unknown or out-of-scope `server_id` returns `ServerNotFound` or `AccessDenied`
+- missing `server_id` returns `parameter-error`
+- unknown `server_id` returns `ServerNotFound`
 - malformed JSON returns `parameter-error` with `Request body must contain valid JSON.`
 - invalid fields/values return `parameter-error`
 

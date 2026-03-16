@@ -2,9 +2,6 @@
 
 module ManagementAPI
   class CredentialsController < BaseController
-    skip_before_action :authenticate_as_server
-    before_action :authenticate_as_user
-
     def index
       server = resolve_server_for_index_filter
       return if performed?
@@ -73,15 +70,6 @@ module ManagementAPI
 
     private
 
-    def authenticate_as_user
-      authenticate_as_server
-      return if performed?
-
-      return if current_api_user
-
-      render_error("AccessDenied", message: "Credential management requires a valid user context")
-    end
-
     def find_credential
       credential = scoped_credentials.find_by(uuid: params[:uuid])
       return credential if credential
@@ -97,12 +85,15 @@ module ManagementAPI
     end
 
     def scoped_servers
-      scoped_servers_for_current_credential
+      Server.present.where(organization_id: scoped_organizations_for_current_api_user.select(:id))
     end
 
     def resolve_server_for_write
       server_id = api_params["server_id"]
-      return current_server if server_id.blank?
+      if server_id.blank?
+        render_parameter_error("server_id is required")
+        return nil
+      end
 
       unless server_id.to_s.match?(/\A\d+\z/)
         render_parameter_error("server_id must be an integer")
@@ -202,14 +193,6 @@ module ManagementAPI
 
       render_parameter_error("#{field_name} must be a boolean")
       :invalid
-    end
-
-    def current_server
-      current_api_server
-    end
-
-    def current_organization
-      current_api_organization
     end
 
     def credential_hash(credential, include_details: false)

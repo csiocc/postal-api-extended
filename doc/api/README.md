@@ -26,23 +26,58 @@ This keeps send traffic and management traffic on separate URL spaces while pres
 
 ## Authentication
 
-Postal APIs use header-based authentication with API keys:
+Postal now uses two different API key types:
 
+### Management API authentication
+
+Management endpoints under `/api/v1/manage/*` require:
+
+```http
+X-Management-API-Key: your_management_api_key_here
 ```
-X-Server-API-Key: your_api_key_here
+
+Management keys are:
+- global-only
+- bound to an internal admin user
+- created in the Postal web admin user screen
+- valid only on `/api/v1/manage/*`
+
+Requests to `/api/v1/manage/*` with only `X-Server-API-Key` are rejected.
+
+### Send and message authentication
+
+Send and query endpoints keep the legacy server credential header:
+
+```http
+X-Server-API-Key: your_server_api_key_here
 ```
 
-Authorization is derived from the owner of the credential's server organization:
-- admin owner: global organization scope
-- non-admin owner: scoped organization access
+This applies to:
+- `/api/v1/send/*`
+- `/api/v1/messages/*`
 
-### Getting an API Key
+`X-Management-API-Key` does not grant access to send or message endpoints.
 
-1. Log into Postal web interface
-2. Navigate to your server settings
-3. Go to "Credentials" section
-4. Create a new API credential
-5. Copy the generated key
+This is the intended split:
+- management changes use admin-bound management keys
+- send/query traffic keeps using server credentials
+
+### Getting a Management API Key
+
+1. Log into the Postal web interface as an admin user.
+2. Open `Users`.
+3. Edit the admin user that should own the key.
+4. Create a `Management API Key`.
+5. Copy the generated key immediately. It is shown only once.
+
+## Migration Note
+
+This is a hard authentication cut for the management API:
+- `/api/v1/manage/*` no longer accepts server API credentials
+- internal clients must switch to `X-Management-API-Key`
+- `/api/v1/send/*` and `/api/v1/messages/*` remain unchanged
+- Postman/Newman management collections must send `X-Management-API-Key`
+- management write requests now require explicit IDs such as `organization_id` and `server_id`
 
 ## API Response Format
 

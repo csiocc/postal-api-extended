@@ -24,6 +24,19 @@ RSpec.describe "Legacy Messages API", type: :request do
       end
     end
 
+    context "when a management API key is provided instead of a server API key" do
+      it "returns an error" do
+        management_api_key = create(:management_api_key)
+
+        post "/api/v1/messages/deliveries", headers: { "x-management-api-key" => management_api_key.key }
+
+        expect(response.status).to eq 200
+        parsed_body = JSON.parse(response.body)
+        expect(parsed_body["status"]).to eq "error"
+        expect(parsed_body["data"]["code"]).to eq "AccessDenied"
+      end
+    end
+
     context "when the credential belongs to a suspended server" do
       it "returns an error" do
         server = create(:server, :suspended)

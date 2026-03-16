@@ -2,8 +2,6 @@
 
 module ManagementAPI
   class OrganizationsController < BaseController
-    skip_before_action :authenticate_as_server
-    before_action :authenticate_as_user
     before_action :admin_required_for_organization_write, only: [:create, :destroy]
 
     def index
@@ -79,15 +77,6 @@ module ManagementAPI
     end
 
     private
-
-    def authenticate_as_user
-      authenticate_as_server
-      return if performed?
-
-      return if current_api_user
-
-      render_error("AccessDenied", message: "Organization management requires a valid user context")
-    end
 
     def admin_required_for_organization_write
       return if current_api_user&.admin?

@@ -42,6 +42,12 @@ module Postal
 
     config.hosts << Postal::Config.postal.web_hostname
 
+    if Rails.env.development? || Rails.env.test?
+      config.hosts << "localhost"
+      config.hosts << "127.0.0.1"
+      config.hosts << "::1"
+    end
+
     unless Postal::Config.logging.rails_log_enabled?
       config.logger = Logger.new("/dev/null")
     end

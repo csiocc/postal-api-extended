@@ -5,9 +5,6 @@ module ManagementAPI
     STATUS_VALUES = %w[pending pending_dns verifying verified failed].freeze
     DOMAIN_SCOPE_VALUES = %w[server organization].freeze
 
-    skip_before_action :authenticate_as_server
-    before_action :authenticate_as_user
-
     def index
       domains = scoped_domains.order(:name)
       domains = apply_scope_filter(domains)
@@ -113,15 +110,6 @@ module ManagementAPI
 
     private
 
-    def authenticate_as_user
-      authenticate_as_server
-      return if performed?
-
-      return if current_api_user
-
-      render_error("AccessDenied", message: "Domain management requires a valid user context")
-    end
-
     def find_domain
       domain = scoped_domains.find_by(uuid: params[:uuid])
       return domain if domain
@@ -135,11 +123,11 @@ module ManagementAPI
     end
 
     def scoped_organizations
-      scoped_organizations_for_current_credential
+      scoped_organizations_for_current_api_user
     end
 
     def scoped_servers
-      scoped_servers_for_current_credential
+      Server.present.where(organization_id: scoped_organizations.select(:id))
     end
 
     def scoped_domains
@@ -178,10 +166,9 @@ module ManagementAPI
         resolve_server_owner(server_id)
       elsif organization_id.present?
         resolve_organization_owner(organization_id)
-      elsif requested_scope == "organization"
-        current_organization
       else
-        current_server
+        render_parameter_error("server_id or organization_id must be provided")
+        nil
       end
     end
 
@@ -308,7 +295,8 @@ module ManagementAPI
     def log_domain_verification_failure(domain, error)
       Rails.logger.error(
         "Management API domain verification failed for domain=#{domain&.uuid || params[:uuid]} " \
-        "server=#{@current_credential&.server&.uuid} error_class=#{error.class} error=#{error.message}"
+        "management_key=#{current_management_api_key&.uuid} user=#{current_api_user&.uuid} " \
+        "error_class=#{error.class} error=#{error.message}"
       )
     end
 
@@ -361,14 +349,6 @@ module ManagementAPI
 
       render_parameter_error("#{field_name} must be a boolean")
       :invalid
-    end
-
-    def current_server
-      @current_server ||= current_api_server
-    end
-
-    def current_organization
-      @current_organization ||= current_api_organization
     end
 
     def domain_scope(domain)

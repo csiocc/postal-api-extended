@@ -1,0 +1,54 @@
+- return unless @user.admin?
+
+- created_key = flash[:management_api_key_created]
+
+%fieldset.fieldSet
+  .fieldSet__title
+    Management API Keys
+  .fieldSet__titleSubText
+    These keys authenticate access to `/api/v1/manage/*`. They are only valid for admin users and are separate from server API credentials.
+
+  - if created_key.present?
+    .fieldSet__field
+      .fieldSet__label Newly created key
+      .fieldSet__input
+        %input.input.input--text{ type: "text", value: created_key["key"], readonly: true, autocomplete: "off" }
+        %p.fieldSet__text
+          Copy this key now. It will not be shown again.
+
+  - if @user.management_api_keys.exists?
+    - @user.management_api_keys.order(created_at: :desc).each do |management_api_key|
+      .fieldSet__field
+        .fieldSet__label= management_api_key.name
+        .fieldSet__input
+          %p.fieldSet__text
+            Status:
+            %strong= management_api_key.active? ? "Active" : "Revoked"
+          %p.fieldSet__text
+            Last used:
+            = management_api_key.last_used_at ? management_api_key.last_used_at.strftime("%Y-%m-%d %H:%M:%S %Z") : "Never"
+          %p.fieldSet__text
+            Created:
+            = management_api_key.created_at.strftime("%Y-%m-%d %H:%M:%S %Z")
+          - if management_api_key.revoked_at?
+            %p.fieldSet__text
+              Revoked:
+              = management_api_key.revoked_at.strftime("%Y-%m-%d %H:%M:%S %Z")
+          - else
+            .buttonSet
+              = link_to "Revoke key", [@user, management_api_key], remote: true, method: :delete, class: "button button--danger", data: { confirm: "Are you sure you wish to revoke this management API key?" }
+  - else
+    .fieldSet__field
+      .fieldSet__input
+        %p.fieldSet__text No management API keys have been created for this user yet.
+
+= form_tag user_management_api_keys_path(@user), remote: true do
+  .fieldSet__field
+    = label_tag "management_api_key_name", "Key name", class: "fieldSet__label"
+    .fieldSet__input
+      = text_field_tag "management_api_key[name]", nil, class: "input input--text", id: "management_api_key_name", placeholder: "Automation key", autocomplete: "off"
+      %p.fieldSet__text
+        Use a descriptive name so you can identify and revoke this key later.
+
+  .fieldSetSubmit.buttonSet
+    = submit_tag "Create Management API Key", class: "button button--positive js-form-submit"

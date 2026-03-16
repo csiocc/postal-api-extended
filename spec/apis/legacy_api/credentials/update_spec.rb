@@ -3,60 +3,40 @@
 require "rails_helper"
 
 RSpec.describe "ManagementAPI::Credentials#update", type: :request do
-  let(:organization) { create(:organization) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
+  let(:organization) { create(:organization, owner: admin_user) }
   let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
   let(:target_credential) { create(:credential, server: server, name: "Original Credential", hold: false) }
   let(:other_organization) { create(:organization) }
   let(:foreign_server) { create(:server, organization: other_organization) }
   let(:foreign_credential) { create(:credential, server: foreign_server, name: "Foreign Credential") }
 
-  before do
-    organization.update!(owner: admin_user)
-  end
-
   def json_headers_for(api_key)
     {
-      "X-Server-API-Key" => api_key,
+      "X-Management-API-Key" => api_key,
       "Content-Type" => "application/json"
     }
   end
 
-  it "blocks cross-organization updates for admin credentials" do
+  it "allows cross-organization updates for management API keys" do
     patch "/api/v1/manage/credentials/#{foreign_credential.uuid}",
           params: { name: "Updated Credential", hold: true }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json.dig("data", "code")).to eq("CredentialNotFound")
+    expect(json["status"]).to eq("success")
 
     foreign_credential.reload
-    expect(foreign_credential.name).to eq("Foreign Credential")
-    expect(foreign_credential.hold).not_to eq(true)
+    expect(foreign_credential.name).to eq("Updated Credential")
+    expect(foreign_credential.hold).to eq(true)
   end
 
-  it "blocks cross-organization updates for non-admin owners" do
-    organization.update!(owner: create(:user, admin: false))
-
-    patch "/api/v1/manage/credentials/#{foreign_credential.uuid}",
-          params: { name: "Blocked Update" }.to_json,
-          headers: json_headers_for(credential.key)
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("error")
-    expect(json.dig("data", "code")).to eq("CredentialNotFound")
-  end
-
-  it "allows scoped updates for non-admin owners" do
-    organization.update!(owner: create(:user, admin: false))
-
+  it "updates local credentials" do
     patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { name: "Scoped Updated", hold: true }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
@@ -71,7 +51,7 @@ RSpec.describe "ManagementAPI::Credentials#update", type: :request do
   it "accepts numeric hold values on update" do
     patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { hold: 0 }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
@@ -81,7 +61,7 @@ RSpec.describe "ManagementAPI::Credentials#update", type: :request do
   it "returns parameter-error when changing the key is not allowed" do
     patch "/api/v1/manage/credentials/#{target_credential.uuid}",
           params: { key: "new-key-value" }.to_json,
-          headers: json_headers_for(credential.key)
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")
@@ -90,8 +70,8 @@ RSpec.describe "ManagementAPI::Credentials#update", type: :request do
 
   it "returns parameter-error for invalid hold value" do
     patch "/api/v1/manage/credentials/#{target_credential.uuid}",
-         params: { hold: "not-a-boolean" }.to_json,
-          headers: json_headers_for(credential.key)
+          params: { hold: "not-a-boolean" }.to_json,
+          headers: json_headers_for(management_api_key.key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")

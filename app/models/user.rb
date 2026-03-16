@@ -40,6 +40,9 @@ class User < ApplicationRecord
 
   has_many :organization_users, dependent: :destroy, as: :user
   has_many :organizations, through: :organization_users
+  has_many :management_api_keys, dependent: :destroy
+
+  after_update :revoke_management_api_keys!, if: :saved_change_to_admin?
 
   def organizations_scope
     if admin?
@@ -132,6 +135,14 @@ class User < ApplicationRecord
       user
     end
 
+  end
+
+  private
+
+  def revoke_management_api_keys!
+    return if admin?
+
+    management_api_keys.active.find_each(&:revoke!)
   end
 
 end

@@ -4,10 +4,8 @@ require "rails_helper"
 
 RSpec.describe "ManagementAPI::Users#show", type: :request do
   let(:organization) { create(:organization) }
-  let(:server) { create(:server, organization: organization) }
-  let(:credential) { create(:credential, server: server) }
-
-  let(:admin_user) { create(:user, admin: true) }
+  let(:admin_user) { create(:user, :admin) }
+  let(:management_api_key) { create(:management_api_key, user: admin_user) }
   let(:target_user) { create(:user) }
   let(:other_organization) { create(:organization) }
   let(:foreign_user) { create(:user) }
@@ -20,7 +18,7 @@ RSpec.describe "ManagementAPI::Users#show", type: :request do
 
   it "returns user details for users inside the credential scope" do
     get "/api/v1/manage/users/#{target_user.uuid}",
-        headers: { "X-Server-API-Key" => credential.key }
+        headers: management_api_headers(management_api_key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
@@ -31,21 +29,19 @@ RSpec.describe "ManagementAPI::Users#show", type: :request do
 
   it "allows cross-organization user reads for admin credentials" do
     get "/api/v1/manage/users/#{foreign_user.uuid}",
-        headers: { "X-Server-API-Key" => credential.key }
+        headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("success")
     expect(json.dig("data", "user", "uuid")).to eq(foreign_user.uuid)
   end
 
-  it "denies access for non-admin organization owners" do
-    organization.update!(owner: create(:user, admin: false))
-
-    get "/api/v1/manage/users/#{foreign_user.uuid}",
-        headers: { "X-Server-API-Key" => credential.key }
+  it "returns not found for unknown users" do
+    get "/api/v1/manage/users/invalid-uuid",
+        headers: management_api_headers(management_api_key)
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("error")
-    expect(json["data"]["code"]).to eq("AccessDenied")
+    expect(json["data"]["code"]).to eq("UserNotFound")
   end
 end

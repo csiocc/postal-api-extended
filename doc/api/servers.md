@@ -13,17 +13,14 @@ This page documents the server endpoints under `/api/v1/manage/servers`.
 
 ## Authentication and Authorization
 
-Every request needs a server API key in the header:
+Every request needs a management API key in the header:
 
 ```http
-X-Server-API-Key: <api_key>
+X-Management-API-Key: <management_api_key>
 ```
 
-The API actor is the owner of the credential's server organization.
-
-Scope rules:
-- admin actor (`admin=true`): all organizations
-- non-admin actor: organizations they own or are assigned to
+Management keys are bound to admin users and have global management scope.
+Requests with only `X-Server-API-Key` are rejected.
 
 ## Response Format
 
@@ -42,9 +39,9 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 | Code | Meaning |
 |---|---|
-| `AccessDenied` | Missing auth or out-of-scope target organization |
-| `InvalidServerAPIKey` | API key does not exist |
-| `ServerSuspended` | Credential belongs to a suspended server |
+| `AccessDenied` | Missing auth or wrong header type |
+| `InvalidManagementAPIKey` | API key does not exist |
+| `ManagementAPIKeyRevoked` | API key has been revoked |
 | `ServerNotFound` | UUID is missing or outside current visibility scope |
 | `OrganizationNotFound` | Provided `organization_id` does not exist |
 
@@ -86,9 +83,10 @@ Creates a server.
 | `name` | string | yes | unique within organization |
 | `permalink` | string | no | defaults from name if omitted |
 | `mode` | string | yes | `Live` or `Development` |
-| `organization_id` | integer | no | defaults to credential organization |
+| `organization_id` | integer | yes | target organization for the new server |
 
 Validation or malformed input returns `parameter-error`.
+If `organization_id` is omitted, the request fails with `organization_id is required`.
 
 ---
 
