@@ -57,10 +57,13 @@ Optional query params:
 - `server_id` (integer): limits results to credentials of that server
   - unknown `server_id` returns `ServerNotFound`
   - non-integer `server_id` returns `parameter-error`
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
 
 Success payload:
 - `data.credentials` array
 - `data.total` count
+- `data.pagination` metadata
 
 ---
 

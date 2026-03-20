@@ -4,9 +4,13 @@ module ManagementAPI
   class ServersController < BaseController
     def index
       servers = scoped_servers.order(:name).includes(:organization)
+      servers = paginate_scope(servers)
+      return if performed?
+
       render_success(
         servers: servers.map { |server| server_hash(server) },
-        total: servers.count
+        total: servers.total_count,
+        pagination: pagination_data(servers)
       )
     end
 

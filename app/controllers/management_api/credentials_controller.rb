@@ -8,9 +8,13 @@ module ManagementAPI
 
       credentials = scoped_credentials.order(:name).includes(server: :organization)
       credentials = credentials.where(server_id: server.id) if server
+      credentials = paginate_scope(credentials)
+      return if performed?
+
       render_success(
         credentials: credentials.map { |credential| credential_hash(credential) },
-        total: credentials.count
+        total: credentials.total_count,
+        pagination: pagination_data(credentials)
       )
     end
 

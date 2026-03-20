@@ -6,8 +6,14 @@ module ManagementAPI
 
     def index
       organizations = scoped_organizations.order(:name).includes(:owner) # only Orgs with deleted_at: nil
-      
-      render_success( organizations: organizations.map { |organization| organization_hash(organization) }, total: organizations.count)
+      organizations = paginate_scope(organizations)
+      return if performed?
+
+      render_success(
+        organizations: organizations.map { |organization| organization_hash(organization) },
+        total: organizations.total_count,
+        pagination: pagination_data(organizations)
+      )
     end
 
     def show

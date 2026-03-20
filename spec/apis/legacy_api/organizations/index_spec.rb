@@ -19,6 +19,24 @@ RSpec.describe 'ManagementAPI::Organizations#index', type: :request do
     expect(organizations.map { |org| org['uuid'] }).to include(other_organization.uuid)
   end
 
+  it "paginates organizations" do
+    get "/api/v1/manage/organizations",
+        params: { per_page: 1, page: 2 },
+        headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "organizations").size).to eq(1)
+    expect(json.dig("data", "total")).to eq(2)
+    expect(json.dig("data", "pagination")).to eq(
+      "page" => 2,
+      "per_page" => 1,
+      "total" => 2,
+      "total_pages" => 2
+    )
+  end
+
   it "rejects missing management auth" do
     get "/api/v1/manage/organizations"
 

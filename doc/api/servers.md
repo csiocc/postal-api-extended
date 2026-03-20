@@ -53,6 +53,10 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 Returns servers visible in the current scope (`Server.present`, ordered by `name`).
 
+Pagination query params:
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
+
 ---
 
 ## `GET /api/v1/manage/servers/:uuid`

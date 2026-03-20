@@ -51,6 +51,15 @@ Requests with only `X-Server-API-Key` are rejected.
 
 Lists visible users, ordered by `first_name`, `last_name`.
 
+Pagination query params:
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
+
+Success payload includes:
+- `data.users`
+- `data.total`
+- `data.pagination`
+
 ### `GET /api/v1/manage/users/:uuid`
 
 Returns one user with details (`organizations`, `email_verified_at`, `oidc`).

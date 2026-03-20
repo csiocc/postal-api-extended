@@ -19,9 +19,13 @@ module ManagementAPI
       domains = apply_organization_filter(domains)
       return if performed?
 
+      domains = paginate_scope(domains)
+      return if performed?
+
       render_success(
         domains: domains.map { |domain| domain_hash(domain) },
-        total: domains.count
+        total: domains.total_count,
+        pagination: pagination_data(domains)
       )
     end
 

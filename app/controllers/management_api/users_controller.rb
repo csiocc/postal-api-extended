@@ -6,9 +6,13 @@ module ManagementAPI
 
     def index
       users = scoped_users.order(:first_name, :last_name).includes(:organization_users)
+      users = paginate_scope(users)
+      return if performed?
+
       render_success(
         users: users.map { |u| user_hash(u) },
-        total: users.count
+        total: users.total_count,
+        pagination: pagination_data(users)
       )
     end
 

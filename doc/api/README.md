@@ -94,6 +94,10 @@ All API responses follow this structure:
 }
 ```
 
+Management API list endpoints are paginated with query params:
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
+
 ### Status Codes
 
 - `success` - Request completed successfully

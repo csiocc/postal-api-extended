@@ -25,6 +25,24 @@ RSpec.describe "ManagementAPI::Credentials#index", type: :request do
     expect(json.dig("data", "total")).to eq(uuids.size)
   end
 
+  it "paginates credentials after filtering" do
+    get "/api/v1/manage/credentials",
+        params: { server_id: server.id, page: 1, per_page: 1 },
+        headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "credentials").size).to eq(1)
+    expect(json.dig("data", "total")).to eq(2)
+    expect(json.dig("data", "pagination")).to eq(
+      "page" => 1,
+      "per_page" => 1,
+      "total" => 2,
+      "total_pages" => 2
+    )
+  end
+
   it "filters by server_id across organizations for management API keys" do
     get "/api/v1/manage/credentials",
         params: { server_id: other_server.id },

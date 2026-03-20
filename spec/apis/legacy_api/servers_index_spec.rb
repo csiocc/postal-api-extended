@@ -28,6 +28,25 @@ RSpec.describe "ManagementAPI::Servers#index", type: :request do
     expect(json.dig("data", "total")).to eq(uuids.size)
   end
 
+  it "paginates servers" do
+    get "/api/v1/manage/servers",
+        params: { page: 2, per_page: 2 },
+        headers: management_api_headers(management_api_key)
+
+    expect(response).to have_http_status(200)
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "servers").size).to eq(1)
+    expect(json.dig("data", "total")).to eq(3)
+    expect(json.dig("data", "pagination")).to eq(
+      "page" => 2,
+      "per_page" => 2,
+      "total" => 3,
+      "total_pages" => 2
+    )
+  end
+
   it "rejects server API keys on management routes" do
     credential = create(:credential, server: server)
     get "/api/v1/manage/servers", headers: { "X-Server-API-Key" => credential.key }

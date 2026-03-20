@@ -28,6 +28,35 @@ RSpec.describe "ManagementAPI::Users#index", type: :request do
     expect(json["data"]["total"]).to eq(uuids.size)
   end
 
+  it "paginates users" do
+    get "/api/v1/manage/users",
+        params: { page: 2, per_page: 2 },
+        headers: management_api_headers(management_api_key)
+
+    expect(response).to have_http_status(200)
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "users").size).to eq(1)
+    expect(json.dig("data", "total")).to eq(3)
+    expect(json.dig("data", "pagination")).to eq(
+      "page" => 2,
+      "per_page" => 2,
+      "total" => 3,
+      "total_pages" => 2
+    )
+  end
+
+  it "returns parameter-error for invalid pagination params" do
+    get "/api/v1/manage/users",
+        params: { page: 0, per_page: "abc" },
+        headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("page must be greater than or equal to 1")
+  end
+
   it "rejects server API keys on management routes" do
     server = create(:server, organization: organization)
     credential = create(:credential, server: server)

@@ -54,6 +54,24 @@ RSpec.describe "ManagementAPI::Domains#index", type: :request do
     expect(names).to include(server_domain.name, organization_domain.name, other_org_domain.name)
   end
 
+  it "paginates domains after filters are applied" do
+    get "/api/v1/manage/domains",
+        params: { scope: "server", page: 1, per_page: 2 },
+        headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "domains").size).to eq(2)
+    expect(json.dig("data", "total")).to eq(5)
+    expect(json.dig("data", "pagination")).to eq(
+      "page" => 1,
+      "per_page" => 2,
+      "total" => 5,
+      "total_pages" => 3
+    )
+  end
+
   it "filters by scope=organization" do
     get "/api/v1/manage/domains",
         params: { scope: "organization" },
@@ -165,5 +183,15 @@ RSpec.describe "ManagementAPI::Domains#index", type: :request do
 
     json = JSON.parse(response.body)
     expect(json["status"]).to eq("parameter-error")
+  end
+
+  it "returns parameter-error for oversized per_page" do
+    get "/api/v1/manage/domains",
+        params: { per_page: 101 },
+        headers: management_api_headers(management_api_key)
+
+    json = JSON.parse(response.body)
+    expect(json["status"]).to eq("parameter-error")
+    expect(json.dig("data", "message")).to eq("per_page must be less than or equal to 100")
   end
 end

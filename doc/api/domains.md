@@ -82,10 +82,13 @@ Optional filters:
 - `status`: `pending`, `pending_dns`, `verifying`, `verified`, `failed`
 - `server_id`: integer
 - `organization_id`: integer
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
 
 Success payload:
 - `data.domains` array
 - `data.total` count
+- `data.pagination` metadata
 
 ---
 

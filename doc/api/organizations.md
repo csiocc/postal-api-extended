@@ -53,6 +53,10 @@ Legacy API responses are evaluated by JSON payload, not by HTTP status alone.
 
 Returns all visible non-deleted organizations (`Organization.present`), ordered by `name`.
 
+Pagination query params:
+- `page` (default `1`)
+- `per_page` (default `50`, max `100`)
+
 Example:
 
 ```bash
@@ -77,7 +81,13 @@ Success excerpt:
         "updated_at": "2026-03-03T10:00:00Z"
       }
     ],
-    "total": 1
+    "total": 1,
+    "pagination": {
+      "page": 1,
+      "per_page": 50,
+      "total": 1,
+      "total_pages": 1
+    }
   }
 }
 ```

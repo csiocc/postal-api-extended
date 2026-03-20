@@ -2,6 +2,9 @@
 
 module ManagementAPI
   class BaseController < ActionController::Base
+    DEFAULT_PAGE = 1
+    DEFAULT_PER_PAGE = 50
+    MAX_PER_PAGE = 100
 
     skip_before_action :set_browser_id
     skip_before_action :verify_authenticity_token
@@ -94,6 +97,22 @@ module ManagementAPI
       @current_api_user
     end
 
+    def paginate_scope(scope)
+      options = pagination_options
+      return if performed?
+
+      scope.page(options[:page]).per(options[:per_page])
+    end
+
+    def pagination_data(scope)
+      {
+        page: scope.current_page,
+        per_page: scope.limit_value,
+        total: scope.total_count,
+        total_pages: scope.total_pages
+      }
+    end
+
     def scoped_organizations_for_current_api_user
       return Organization.present.none unless current_api_user
       return Organization.present if current_api_user.admin?
@@ -106,6 +125,36 @@ module ManagementAPI
           user_id: current_api_user.id
         )
         .distinct
+    end
+
+    def pagination_options
+      page = parse_positive_integer_param(params[:page], "page", default: DEFAULT_PAGE)
+      return if performed?
+
+      per_page = parse_positive_integer_param(params[:per_page], "per_page", default: DEFAULT_PER_PAGE)
+      return if performed?
+
+      if per_page > MAX_PER_PAGE
+        render_parameter_error("per_page must be less than or equal to #{MAX_PER_PAGE}")
+        return
+      end
+
+      { page: page, per_page: per_page }
+    end
+
+    def parse_positive_integer_param(value, field_name, default:)
+      return default if value.blank?
+
+      integer = Integer(value, 10)
+      if integer < 1
+        render_parameter_error("#{field_name} must be greater than or equal to 1")
+        return
+      end
+
+      integer
+    rescue ArgumentError, TypeError
+      render_parameter_error("#{field_name} must be an integer")
+      nil
     end
   end
 end
