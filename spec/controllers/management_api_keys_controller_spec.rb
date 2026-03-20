@@ -23,10 +23,11 @@ RSpec.describe ManagementAPIKeysController, type: :controller do
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to include("redirect_to" => edit_user_path(target_user))
       expect(created_key.name).to eq("Automation Key")
+      expect(created_key.key).to be_nil
       expect(flash[:management_api_key_created]).to include(
-        "name" => "Automation Key",
-        "key" => created_key.key
+        "name" => "Automation Key"
       )
+      expect(created_key.key_digest).to eq(ManagementAPIKey.digest_for(flash[:management_api_key_created]["key"]))
     end
 
     it "rejects keys for non-admin users" do

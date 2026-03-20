@@ -154,12 +154,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_16_090000) do
     t.integer "user_id", null: false
     t.string "uuid", null: false
     t.string "name", null: false
-    t.string "key", null: false
     t.datetime "last_used_at"
     t.datetime "revoked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_management_api_keys_on_key", unique: true
+    t.string "key_digest", null: false
+    t.index ["key_digest"], name: "index_management_api_keys_on_key_digest", unique: true
     t.index ["user_id"], name: "index_management_api_keys_on_user_id"
     t.index ["uuid"], name: "index_management_api_keys_on_uuid", unique: true
   end

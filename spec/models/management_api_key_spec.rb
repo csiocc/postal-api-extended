@@ -31,7 +31,7 @@ describe ManagementAPIKey do
       duplicate = build(:management_api_key, key: "dupkey1234567890dupkey1234567890dupkey12")
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:key]).to include("has already been taken")
+      expect(duplicate.errors[:key_digest]).to include("has already been taken")
     end
   end
 
@@ -48,6 +48,27 @@ describe ManagementAPIKey do
 
     it "keeps an explicitly provided key" do
       expect { management_api_key.save! }.not_to change(management_api_key, :key)
+    end
+
+    it "stores only a digest for the key" do
+      management_api_key.save!
+
+      expect(management_api_key.key_digest).to eq(described_class.digest_for(management_api_key.key))
+    end
+  end
+
+  describe ".authenticate" do
+    it "finds a key using the plaintext token" do
+      management_api_key.save!
+
+      expect(described_class.authenticate(management_api_key.key)).to eq(management_api_key)
+    end
+
+    it "matches keys case-insensitively for backwards compatibility" do
+      management_api_key.key = "AbCd1234EfGh5678IjKl9012MnOp3456QrSt7890"
+      management_api_key.save!
+
+      expect(described_class.authenticate("abcd1234efgh5678ijkl9012mnop3456qrst7890")).to eq(management_api_key)
     end
   end
 

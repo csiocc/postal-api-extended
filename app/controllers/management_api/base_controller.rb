@@ -37,11 +37,10 @@ module ManagementAPI
         return
       end
 
-      management_api_key = ManagementAPIKey.includes(:user).find_by(key: key)
+      management_api_key = ManagementAPIKey.authenticate(key)
       if management_api_key.nil?
         render_error "InvalidManagementAPIKey",
-                     message: "The API token provided in X-Management-API-Key was not valid.",
-                     token: key
+                     message: "The API token provided in X-Management-API-Key was not valid."
         return
       end
 
