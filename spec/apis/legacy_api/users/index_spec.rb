@@ -29,21 +29,26 @@ RSpec.describe "ManagementAPI::Users#index", type: :request do
   end
 
   it "paginates users" do
+    page = 2
+    per_page = 2
+    total_users = User.count
+    expected_page_size = [[total_users - ((page - 1) * per_page), 0].max, per_page].min
+
     get "/api/v1/manage/users",
-        params: { page: 2, per_page: 2 },
+        params: { page:, per_page: },
         headers: management_api_headers(management_api_key)
 
     expect(response).to have_http_status(200)
     json = JSON.parse(response.body)
 
     expect(json["status"]).to eq("success")
-    expect(json.dig("data", "users").size).to eq(1)
-    expect(json.dig("data", "total")).to eq(3)
+    expect(json.dig("data", "users").size).to eq(expected_page_size)
+    expect(json.dig("data", "total")).to eq(total_users)
     expect(json.dig("data", "pagination")).to eq(
-      "page" => 2,
-      "per_page" => 2,
-      "total" => 3,
-      "total_pages" => 2
+      "page" => page,
+      "per_page" => per_page,
+      "total" => total_users,
+      "total_pages" => (total_users.to_f / per_page).ceil
     )
   end
 
