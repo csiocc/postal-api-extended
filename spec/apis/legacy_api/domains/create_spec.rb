@@ -35,6 +35,9 @@ RSpec.describe "ManagementAPI::Domains#create", type: :request do
 
     created_domain = Domain.find_by!(uuid: json.dig("data", "domain", "uuid"))
     expect(created_domain.owner).to eq(server)
+    expect(json.dig("data", "domain", "status")).to eq("pending_dns")
+    expect(json.dig("data", "domain", "verification_method")).to eq("DNS")
+    expect(json.dig("data", "domain", "ownership_verification_skipped")).to eq(true)
   end
 
   it "creates an organization-owned domain when organization_id is provided" do
@@ -47,6 +50,20 @@ RSpec.describe "ManagementAPI::Domains#create", type: :request do
 
     created_domain = Domain.find_by!(uuid: json.dig("data", "domain", "uuid"))
     expect(created_domain.owner).to eq(organization)
+    expect(json.dig("data", "domain", "ownership_verification_skipped")).to eq(true)
+  end
+
+  it "documents the admin ownership-verification shortcut in the response" do
+    post "/api/v1/manage/domains",
+         params: valid_params.merge(name: "shortcut.example", server_id: server.id).to_json,
+         headers: json_headers_for(management_api_key.key)
+
+    json = JSON.parse(response.body)
+
+    expect(json["status"]).to eq("success")
+    expect(json.dig("data", "domain", "ownership_verification_skipped")).to eq(true)
+    expect(json.dig("data", "domain", "status")).to eq("pending_dns")
+    expect(json.dig("data", "domain", "verification", "last_result")).to eq("pending")
   end
 
   it "allows targeting foreign organizations and servers with management API keys" do

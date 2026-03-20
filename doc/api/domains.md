@@ -113,6 +113,12 @@ Out-of-scope or unknown UUID:
 
 Creates a domain.
 
+Important behavior:
+- management API keys are admin-bound
+- newly created domains skip the ownership-verification step that non-admin UI users go through
+- the create response includes `ownership_verification_skipped: true`
+- the created domain starts in status `pending_dns because` the management API create flow sets verified_at immediately and no DNS checks have run yet; this mirrors the existing admin UI flow, which skips the ownership-verification step for admins
+
 ### Request body
 
 | Field | Type | Required | Notes |
@@ -126,6 +132,9 @@ Rules:
 - `server_id` and `organization_id` are mutually exclusive.
 - if neither is provided, the request fails with `server_id or organization_id must be provided`.
 - verification method is fixed to `DNS` on create.
+
+Create success response additionally includes:
+- `data.domain.ownership_verification_skipped` (boolean)
 
 ---
 

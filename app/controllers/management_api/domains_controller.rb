@@ -41,16 +41,20 @@ module ManagementAPI
       return unless owner
 
       domain = owner.domains.build(create_attributes)
+      ownership_verification_skipped = false
 
       if current_api_user.admin?
         # Keep parity with UI behavior: admin-created domains skip ownership verification.
         domain.verification_method = "DNS"
         domain.verified_at = Time.now
+        ownership_verification_skipped = true
       end
 
       if domain.save
         render_success(
-          domain: domain_hash(domain, include_details: true),
+          domain: domain_hash(domain, include_details: true).merge(
+            ownership_verification_skipped: ownership_verification_skipped
+          ),
           message: "Domain #{domain.name} created successfully"
         )
       else
