@@ -2,7 +2,7 @@
 
 module ManagementAPI
   class DomainsController < BaseController
-    STATUS_VALUES = %w[pending pending_dns verifying verified failed].freeze
+    STATUS_VALUES = %w[pending pending_dns verified failed].freeze
     DOMAIN_SCOPE_VALUES = %w[server organization].freeze
 
     def index
@@ -259,8 +259,6 @@ module ManagementAPI
         domains.where(verified_at: nil)
       when "pending_dns"
         domains.where.not(verified_at: nil).where(spf_status: nil)
-      when "verifying"
-        domains.none
       when "verified"
         domains
           .where.not(verified_at: nil)

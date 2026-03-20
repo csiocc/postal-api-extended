@@ -146,16 +146,6 @@ RSpec.describe "ManagementAPI::Domains#index", type: :request do
     expect(names).not_to include(server_domain.name, organization_domain.name, verified_domain.name, failed_domain.name)
   end
 
-  it "filters by status=verifying" do
-    get "/api/v1/manage/domains",
-        params: { status: "verifying" },
-        headers: management_api_headers(management_api_key)
-
-    json = JSON.parse(response.body)
-    expect(json["status"]).to eq("success")
-    expect(json.dig("data", "domains")).to eq([])
-  end
-
   it "filters by status=verified" do
     get "/api/v1/manage/domains",
         params: { status: "verified" },

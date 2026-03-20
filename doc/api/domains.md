@@ -60,7 +60,7 @@ Top-level fields include:
 - `scope` (`server` or `organization`)
 - `server_id`
 - `organization_id`
-- `status` (`pending`, `pending_dns`, `verifying`, `verified`, `failed`)
+- `status` (`pending`, `pending_dns`, `verified`, `failed`)
 - `status_reason`
 - `verification_method`
 - `outgoing`, `incoming`, `use_for_any`
@@ -79,7 +79,7 @@ Returns all visible domains.
 
 Optional filters:
 - `scope`: `server` or `organization`
-- `status`: `pending`, `pending_dns`, `verifying`, `verified`, `failed`
+- `status`: `pending`, `pending_dns`, `verified`, `failed`
 - `server_id`: integer
 - `organization_id`: integer
 - `page` (default `1`)
